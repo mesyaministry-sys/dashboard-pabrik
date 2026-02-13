@@ -61,6 +61,16 @@ st.markdown("""
     .border-qual { border-left-color: #00c6fb !important; }
     .border-chem { border-left-color: #ff9a44 !important; }
     .border-phys { border-left-color: #a18cd1 !important; }
+    
+    /* Style untuk Pesan Kosong */
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        background-color: #f8f9fa;
+        border: 2px dashed #d1d8e0;
+        border-radius: 15px;
+        color: #7f8c8d;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -78,24 +88,20 @@ with st.sidebar:
     sheet_id = st.text_input("ID Google Sheet:", value=default_id)
 
     mode_input = st.radio("Metode Pilih Tab:", ["Pilih Bulan Otomatis", "Input Nama Manual"])
-    target_month_idx = None # Variabel Polisi Tanggal
+    target_month_idx = None 
 
     if mode_input == "Pilih Bulan Otomatis":
-        # Mapping Nama Bulan ke Angka (Jan=1, Feb=2...)
         bulan_map = {
             "JANUARY": 1, "FEBRUARY": 2, "MARCH": 3, "APRIL": 4, "MAY": 5, "JUNE": 6,
             "JULY": 7, "AUGUST": 8, "SEPTEMBER": 9, "OCTOBER": 10, "NOVEMBER": 11, "DECEMBER": 12
         }
         list_bulan = list(bulan_map.keys())
         pilih_bulan = st.selectbox("Pilih Bulan Laporan:", list_bulan, index=0)
-        
-        # PENTING: Saya sesuaikan agar bisa membaca "FEBUARY" (Typo Bapak) atau "FEBRUARY"
-        # Namun di sini kita tetap pakai standar. Jika typo, nanti data akan kosong (aman).
         sheet_name = f"LAPORAN FP BE {pilih_bulan}"
-        target_month_idx = bulan_map[pilih_bulan] # Simpan angka bulan target
+        target_month_idx = bulan_map[pilih_bulan] 
     else:
         sheet_name = st.text_input("Ketik Nama Tab Persis:", value="LAPORAN FP BE JANUARY")
-        target_month_idx = None # Manual tidak dicek tanggalnya
+        target_month_idx = None 
 
     st.info(f"Target Tab: **{sheet_name}**")
 
@@ -145,7 +151,7 @@ st.divider()
 KAMUS_SPEK_PH = { "Z 125": [3.0, 5.0], "Z 211": [3.5, 5.5], "Z 211 SC": [4.0, 7.0], "Z 221 S": [4.0, 7.0], "Z 127": [4.0, 7.0], "Z 301": [4.0, 7.0] }
 
 # ==========================================
-# 2. MESIN PEMBACA DATA (VALIDASI KETAT)
+# 2. MESIN PEMBACA DATA
 # ==========================================
 @st.cache_data
 def load_data(id, sheet_name_input, expected_month=None):
@@ -173,27 +179,18 @@ def load_data(id, sheet_name_input, expected_month=None):
         df_clean = df_clean[~df_clean["DATE"].str.contains("Total|Average|Month", case=False, na=False)]
         df_clean = df_clean[df_clean["DATE"] != ""]
         
-        # --- 👮‍♂️ POLISI TANGGAL (VALIDASI BULAN) ---
+        # POLISI TANGGAL
         if expected_month is not None and not df_clean.empty:
             try:
-                # Ambil satu tanggal dari data untuk dicek
                 sample_date_str = str(df_clean['DATE'].iloc[0])
-                
-                # Coba deteksi format tanggal (Excel sering pakai format: 1-Jan, 2-Feb)
                 dt_sample = None
-                try:
-                    dt_sample = pd.to_datetime(sample_date_str, format='%d-%b', errors='raise')
-                except:
-                    dt_sample = pd.to_datetime(sample_date_str, errors='coerce')
+                try: dt_sample = pd.to_datetime(sample_date_str, format='%d-%b', errors='raise')
+                except: dt_sample = pd.to_datetime(sample_date_str, errors='coerce')
                 
-                # Jika berhasil baca tanggal, cek bulannya
                 if pd.notnull(dt_sample):
-                    # Bandingkan Bulan Data vs Bulan Yang Dipilih User
                     if dt_sample.month != expected_month:
-                        # JIKA BEDA: Berarti Google salah kasih sheet (kemungkinan sheet default/Januari)
-                        return None # Tampilkan Kosong
-            except:
-                pass # Jika gagal cek, biarkan saja (fallback)
+                        return None 
+            except: pass
 
         numeric_cols = ["FLOW", "MOIST_IN", "BATCH", "MOIST_FINISH_PRODUCT", "PH", "DENSITY", "PARTICLE_SIZE", "ACID_CONTENT", "ACIDITY", "SURFACE_AREA"]
         def clean_num(x):
@@ -211,10 +208,9 @@ def load_data(id, sheet_name_input, expected_month=None):
 # 3. DASHBOARD VISUALIZATION
 # ==========================================
 if sheet_id:
-    # Load Data dengan Validasi Bulan
     df = load_data(sheet_id, sheet_name, target_month_idx)
     
-    # Reset Variabel ke 0
+    # Inisialisasi Variabel 0 (Kosong)
     total_prod_ton = 0; total_flow = 0; yield_prod = 0; losses = 0; achievement = 0
     avg_density = 0; avg_part_size = 0; avg_surface = 0; avg_min = 0; avg_fp = 0
     avg_ph = 0; avg_acid = 0; avg_acidity = 0
@@ -237,7 +233,7 @@ if sheet_id:
         avg_acid = df[df['ACID_CONTENT']>0]['ACID_CONTENT'].mean()
         avg_acidity = df[df['ACIDITY']>0]['ACIDITY'].mean()
 
-    # KPI GRID
+    # KPI GRID (TETAP MUNCUL WALAUPUN DATA KOSONG)
     st.markdown("##### 🏗️ Production & Physical Properties")
     c1, c2, c3, c4, c5 = st.columns(5)
     def fmt(val, dec=1): return f"{val:,.{dec}f}" if data_tersedia else "-"
@@ -259,8 +255,9 @@ if sheet_id:
     
     st.divider()
 
+    # --- LOGIKA TAMPILAN GRAFIK & TABEL ---
     if data_tersedia:
-        # CHARTS & TABLES (HANYA MUNCUL JIKA DATA VALID)
+        # 1. JIKA DATA ADA -> TAMPILKAN GRAFIK
         c_a, c_b = st.columns(2)
         with c_a:
             st.subheader("🥧 Product Composition")
@@ -290,61 +287,78 @@ if sheet_id:
             fig_target.update_layout(title=f"Target: {target_daily} T/Day × 31 Days = {target_monthly:,.0f} Ton", barmode='overlay', xaxis_title="Tonase", height=300, margin=dict(t=50, b=10))
             st.plotly_chart(fig_target, use_container_width=True)
 
-        st.divider()
-        st.subheader("🚥 Detailed Quality Control Log (Traffic Light System)")
-        def qc_logic(row):
-            styles = [''] * len(row)
-            prod = str(row['PRODUCT']).upper()
-            m_in, m_fp, ph, dens, ps, acid_c, acidity, sa = row['MOIST_IN'], row['MOIST_FINISH_PRODUCT'], row['PH'], row['DENSITY'], row['PARTICLE_SIZE'], row['ACID_CONTENT'], row['ACIDITY'], row['SURFACE_AREA']
-            GREEN, YELLOW, RED = 'background-color: #d4edda; color: #155724; font-weight: bold;', 'background-color: #fff3cd; color: #856404; font-weight: bold;', 'background-color: #f8d7da; color: #721c24; font-weight: bold;'
-            if m_in >= 40.0: styles[2] = RED
-            elif 38.0 <= m_in <= 39.9: styles[2] = YELLOW
-            elif m_in > 0 and m_in <= 37.9: styles[2] = GREEN
-            if m_fp >= 15.0: styles[5] = RED
-            elif 13.1 <= m_fp <= 14.9: styles[5] = YELLOW
-            elif 8.0 <= m_fp <= 13.0: styles[5] = GREEN
-            elif m_fp > 0 and m_fp <= 7.9: styles[5] = YELLOW
-            if prod:
-                spek = None
-                for k, v in KAMUS_SPEK_PH.items():
-                    if k in prod: spek = v; break
-                if spek and ph > 0:
-                    if spek[0] <= ph <= spek[1]: styles[6] = GREEN
-                    else: styles[6] = RED
-            if dens >= 0.70: styles[7] = RED
-            elif 0.621 <= dens <= 0.699: styles[7] = YELLOW
-            elif dens > 0 and dens <= 0.620: styles[7] = GREEN
-            if ps >= 90.0: styles[8] = YELLOW
-            elif 80.0 <= ps <= 89.9: styles[8] = GREEN
-            elif 75.1 <= ps <= 79.9: styles[8] = YELLOW
-            elif ps > 0 and ps <= 75.0: styles[8] = RED
-            if acid_c > 0:
-                if acid_c > 0.5: styles[9] = RED
-                else: styles[9] = GREEN
-            if acidity > 0:
-                if "211" in prod:
-                    if acidity <= 2.0: styles[10] = GREEN
-                    else: styles[10] = RED
-                elif "125" in prod:
-                    if acidity <= 4.0: styles[10] = GREEN
-                    else: styles[10] = RED
-            if sa > 0:
-                if sa >= 275: styles[11] = GREEN
-                elif sa <= 26.9: styles[11] = RED
-            return styles
-        st.dataframe(df.style.apply(qc_logic, axis=1).format({"FLOW": "{:,.0f}", "MOIST_IN": "{:.2f}%", "BATCH": "{:,.0f}", "MOIST_FINISH_PRODUCT": "{:.2f}%", "PH": "{:.2f}", "DENSITY": "{:.4f}", "PARTICLE_SIZE": "{:.2f}%", "ACID_CONTENT": "{:.3f}%", "ACIDITY": "{:.3f}", "SURFACE_AREA": "{:.0f}"}), use_container_width=True)
-
     else:
-        # PESAN JIKA DATA KOSONG / TANGGAL TIDAK COCOK
+        # 2. JIKA DATA KOSONG -> TAMPILKAN PLACEHOLDER ESTETIK
         st.markdown(
             f"""
-            <div style="background-color: #f1f2f6; padding: 40px; border-radius: 20px; text-align: center; margin-top: 30px; border: 2px dashed #bdc3c7;">
-                <h2 style="color: #7f8c8d;">📂 Data Belum Tersedia</h2>
-                <p style="font-size: 16px; color: #95a5a6;">
-                    Belum ada data valid untuk bulan <b>{sheet_name.split(' ')[-1]}</b>.<br>
-                    <small>Kemungkinan tab di Excel belum dibuat, atau ejaan nama tab berbeda ("FEBUARY" vs "FEBRUARY").</small>
-                </p>
-                <p style="font-size: 14px; color: #bdc3c7;">Jika sudah upload di Google Sheet, silakan klik tombol <b>REFRESH</b> di menu samping.</p>
+            <div class="empty-state">
+                <h3 style="color:#bdc3c7;">Waiting for Data...</h3>
+                <p>Grafik dan Analisa akan muncul otomatis setelah data bulan <b>{sheet_name.split(' ')[-1]}</b> tersedia.</p>
             </div>
             """, unsafe_allow_html=True
         )
+
+    # --- TABEL (SELALU MUNCUL, MESKI KOSONG) ---
+    st.divider()
+    st.subheader(f"🚥 Detailed Quality Control Log: {sheet_name}")
+    
+    # Logic Tabel: Jika data ada -> Pakai data asli. Jika tidak -> Pakai Template Kosong.
+    if data_tersedia:
+        df_display = df
+    else:
+        # Buat DataFrame Kosong dengan Nama Kolom yang Benar
+        cols = ["DATE", "FLOW", "MOIST_IN", "PRODUCT", "BATCH", "MOIST_FINISH_PRODUCT", "PH", "DENSITY", "PARTICLE_SIZE", "ACID_CONTENT", "ACIDITY", "SURFACE_AREA", "BP_2_PERCENT", "STD_BP_2_PERCENT"]
+        df_display = pd.DataFrame(columns=cols)
+
+    def qc_logic(row):
+        # Kalau tabel kosong, tidak perlu diwarnai
+        if not data_tersedia: return [''] * len(row)
+        
+        styles = [''] * len(row)
+        prod = str(row['PRODUCT']).upper()
+        m_in, m_fp, ph, dens, ps, acid_c, acidity, sa = row['MOIST_IN'], row['MOIST_FINISH_PRODUCT'], row['PH'], row['DENSITY'], row['PARTICLE_SIZE'], row['ACID_CONTENT'], row['ACIDITY'], row['SURFACE_AREA']
+        GREEN, YELLOW, RED = 'background-color: #d4edda; color: #155724; font-weight: bold;', 'background-color: #fff3cd; color: #856404; font-weight: bold;', 'background-color: #f8d7da; color: #721c24; font-weight: bold;'
+        
+        if m_in >= 40.0: styles[2] = RED
+        elif 38.0 <= m_in <= 39.9: styles[2] = YELLOW
+        elif m_in > 0 and m_in <= 37.9: styles[2] = GREEN
+        if m_fp >= 15.0: styles[5] = RED
+        elif 13.1 <= m_fp <= 14.9: styles[5] = YELLOW
+        elif 8.0 <= m_fp <= 13.0: styles[5] = GREEN
+        elif m_fp > 0 and m_fp <= 7.9: styles[5] = YELLOW
+        if prod:
+            spek = None
+            for k, v in KAMUS_SPEK_PH.items():
+                if k in prod: spek = v; break
+            if spek and ph > 0:
+                if spek[0] <= ph <= spek[1]: styles[6] = GREEN
+                else: styles[6] = RED
+        if dens >= 0.70: styles[7] = RED
+        elif 0.621 <= dens <= 0.699: styles[7] = YELLOW
+        elif dens > 0 and dens <= 0.620: styles[7] = GREEN
+        if ps >= 90.0: styles[8] = YELLOW
+        elif 80.0 <= ps <= 89.9: styles[8] = GREEN
+        elif 75.1 <= ps <= 79.9: styles[8] = YELLOW
+        elif ps > 0 and ps <= 75.0: styles[8] = RED
+        if acid_c > 0:
+            if acid_c > 0.5: styles[9] = RED
+            else: styles[9] = GREEN
+        if acidity > 0:
+            if "211" in prod:
+                if acidity <= 2.0: styles[10] = GREEN
+                else: styles[10] = RED
+            elif "125" in prod:
+                if acidity <= 4.0: styles[10] = GREEN
+                else: styles[10] = RED
+        if sa > 0:
+            if sa >= 275: styles[11] = GREEN
+            elif sa <= 26.9: styles[11] = RED
+        return styles
+
+    # Tampilkan Tabel
+    if data_tersedia:
+        st.dataframe(df_display.style.apply(qc_logic, axis=1).format({"FLOW": "{:,.0f}", "MOIST_IN": "{:.2f}%", "BATCH": "{:,.0f}", "MOIST_FINISH_PRODUCT": "{:.2f}%", "PH": "{:.2f}", "DENSITY": "{:.4f}", "PARTICLE_SIZE": "{:.2f}%", "ACID_CONTENT": "{:.3f}%", "ACIDITY": "{:.3f}", "SURFACE_AREA": "{:.0f}"}), use_container_width=True)
+    else:
+        # Tampilkan Tabel Kosong (Hanya Header)
+        st.dataframe(df_display, use_container_width=True)
+        st.caption("Data belum tersedia. Tabel di atas adalah template kolom yang akan diisi.")
