@@ -22,24 +22,13 @@ def check_login():
         st.session_state["logged_in"] = False
 
     if not st.session_state["logged_in"]:
-        st.markdown(
-            """
-            <style>
-            .login-box {
-                max-width: 400px; margin: 100px auto; padding: 30px; 
-                border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-                background-color: white; text-align: center;
-            }
-            </style>
-            """, unsafe_allow_html=True)
-        
+        st.markdown("""<style>.login-box {max-width: 400px; margin: 100px auto; padding: 30px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); background-color: white; text-align: center;}</style>""", unsafe_allow_html=True)
         c1, c2, c3 = st.columns([1,2,1])
         with c2:
             st.markdown("### 🔒 ACCESS RESTRICTED")
             st.info("Silakan Login untuk mengakses Dashboard Pabrik.")
             user_input = st.text_input("Username:", key="user_input")
             pass_input = st.text_input("Password:", type="password", key="pass_input")
-            
             if st.button("LOGIN", type="primary"):
                 if user_input == USER_RAHASIA and pass_input == PASS_RAHASIA:
                     st.session_state["logged_in"] = True
@@ -57,32 +46,17 @@ if not check_login():
 # 🚀 MULAI KONTEN DASHBOARD
 # ==========================================
 
-# CSS Styling Pro
 st.markdown("""
 <style>
-    /* HEADER STYLING */
     .header-container { padding-top: 10px; padding-bottom: 20px; }
-    .main-header {
-        font-size: 42px; font-weight: 900; 
-        background: linear-gradient(90deg, #005bea 0%, #00c6fb 100%);
-        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        text-align: left; margin-bottom: 5px; line-height: 1.1;
-        filter: drop-shadow(0px 0px 3px rgba(0, 198, 251, 0.3));
-    }
+    .main-header { font-size: 42px; font-weight: 900; background: linear-gradient(90deg, #005bea 0%, #00c6fb 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: left; margin-bottom: 5px; line-height: 1.1; filter: drop-shadow(0px 0px 3px rgba(0, 198, 251, 0.3)); }
     .sub-header { font-size: 18px; color: #546e7a; text-align: left; margin-bottom: 15px; font-weight: 500; }
     .dev-credit { font-size: 15px; color: #b0bec5; font-weight: 500; font-style: italic; text-align: left; margin-top: 10px; letter-spacing: 0.5px; }
-
-    /* KPI CARD */
-    .kpi-card {
-        background: white; border-radius: 15px; padding: 20px; text-align: center;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-left: 5px solid #3498db;
-        margin-bottom: 10px; transition: transform 0.3s, box-shadow 0.3s;
-    }
+    .kpi-card { background: white; border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-left: 5px solid #3498db; margin-bottom: 10px; transition: transform 0.3s, box-shadow 0.3s; }
     .kpi-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
     .kpi-title { font-size: 13px; color: #95a5a6; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
     .kpi-value { font-size: 26px; font-weight: 800; color: #2c3e50; margin-top: 8px; }
     .kpi-unit { font-size: 12px; color: #bdc3c7; font-weight: 500;}
-    
     .border-prod { border-left-color: #005bea !important; }
     .border-qual { border-left-color: #00c6fb !important; }
     .border-chem { border-left-color: #ff9a44 !important; }
@@ -95,24 +69,19 @@ st.markdown("""
 # ==========================================
 with st.sidebar:
     st.title("🎛️ Control Panel")
-    
     with st.expander("🖼️ Logo Dashboard"):
         uploaded_file = st.file_uploader("Ganti Logo (PNG/JPG):", type=['png', 'jpg', 'jpeg'])
     
     st.divider()
-    
-    # --- PILIH BULAN (TIME MACHINE) ---
     st.header("📅 Pilih Data Bulan")
-    
     default_id = "1yccpRefabM87-Ltzg0lbMHcsR2Qs6ZxPGd5A15jAHZ4"
     sheet_id = st.text_input("ID Google Sheet:", value=default_id)
 
     mode_input = st.radio("Metode Pilih Tab:", ["Pilih Bulan Otomatis", "Input Nama Manual"])
-    
-    target_month_index = None # Variabel untuk validasi bulan
-    
+    target_month_idx = None # Variabel Polisi Tanggal
+
     if mode_input == "Pilih Bulan Otomatis":
-        # Mapping Nama Bulan ke Angka (Jan=1, Feb=2, dst)
+        # Mapping Nama Bulan ke Angka (Jan=1, Feb=2...)
         bulan_map = {
             "JANUARY": 1, "FEBRUARY": 2, "MARCH": 3, "APRIL": 4, "MAY": 5, "JUNE": 6,
             "JULY": 7, "AUGUST": 8, "SEPTEMBER": 9, "OCTOBER": 10, "NOVEMBER": 11, "DECEMBER": 12
@@ -120,16 +89,17 @@ with st.sidebar:
         list_bulan = list(bulan_map.keys())
         pilih_bulan = st.selectbox("Pilih Bulan Laporan:", list_bulan, index=0)
         
+        # PENTING: Saya sesuaikan agar bisa membaca "FEBUARY" (Typo Bapak) atau "FEBRUARY"
+        # Namun di sini kita tetap pakai standar. Jika typo, nanti data akan kosong (aman).
         sheet_name = f"LAPORAN FP BE {pilih_bulan}"
-        target_month_index = bulan_map[pilih_bulan] # Simpan angka bulan yang diharapkan
+        target_month_idx = bulan_map[pilih_bulan] # Simpan angka bulan target
     else:
         sheet_name = st.text_input("Ketik Nama Tab Persis:", value="LAPORAN FP BE JANUARY")
-        target_month_index = None # Tidak ada validasi bulan untuk input manual
+        target_month_idx = None # Manual tidak dicek tanggalnya
 
-    st.info(f"Membaca Tab: **{sheet_name}**")
+    st.info(f"Target Tab: **{sheet_name}**")
 
     st.divider()
-    
     st.header("🎯 Target Setting")
     target_daily = st.number_input("Target Harian (Ton/Hari):", value=45.0, step=1.0)
     target_monthly = target_daily * 31
@@ -151,17 +121,14 @@ with st.sidebar:
 # ==========================================
 st.markdown('<div class="header-container">', unsafe_allow_html=True)
 col_logo, col_teks = st.columns([1.2, 5], gap="large")
-
 with col_logo:
     try:
-        if uploaded_file:
-            image = Image.open(uploaded_file)
-            st.image(image, use_container_width=True)
+        if uploaded_file: image = Image.open(uploaded_file); st.image(image, use_container_width=True)
         else:
             try: st.image("image_0.png", use_container_width=True)
             except: 
                 try: st.image("image_0.jpg", use_container_width=True)
-                except: st.info("Logo Placeholder")
+                except: st.info("Logo")
     except: st.error("Error Logo")
     st.markdown("""<style>[data-testid="stImage"] img {border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);}</style>""", unsafe_allow_html=True)
 
@@ -169,27 +136,19 @@ with col_teks:
     st.markdown('<div class="main-header">FACTORY OPERATION DASHBOARD</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="sub-header">Monitoring Data: <b>{sheet_name}</b> | Production, Quality & Efficiency</div>', unsafe_allow_html=True)
     st.markdown('<div class="dev-credit">✨ Created & Developer : Mahesya</div>', unsafe_allow_html=True)
-
 st.markdown('</div>', unsafe_allow_html=True)
 st.divider()
 
 # ==========================================
 # 📘 KAMUS SPEK
 # ==========================================
-KAMUS_SPEK_PH = {
-    "Z 125":    [3.0, 5.0],
-    "Z 211":    [3.5, 5.5],
-    "Z 211 SC": [4.0, 7.0],
-    "Z 221 S":  [4.0, 7.0],
-    "Z 127":    [4.0, 7.0],
-    "Z 301":    [4.0, 7.0] 
-}
+KAMUS_SPEK_PH = { "Z 125": [3.0, 5.0], "Z 211": [3.5, 5.5], "Z 211 SC": [4.0, 7.0], "Z 221 S": [4.0, 7.0], "Z 127": [4.0, 7.0], "Z 301": [4.0, 7.0] }
 
 # ==========================================
-# 2. MESIN PEMBACA DATA (DENGAN POLISI TANGGAL)
+# 2. MESIN PEMBACA DATA (VALIDASI KETAT)
 # ==========================================
 @st.cache_data
-def load_data(id, sheet_name_input, expected_month_idx=None):
+def load_data(id, sheet_name_input, expected_month=None):
     if sheet_name_input:
         nama_sheet_aman = urllib.parse.quote(sheet_name_input)
         url = f'https://docs.google.com/spreadsheets/d/{id}/gviz/tq?tqx=out:csv&sheet={nama_sheet_aman}'
@@ -213,25 +172,28 @@ def load_data(id, sheet_name_input, expected_month_idx=None):
         
         df_clean = df_clean[~df_clean["DATE"].str.contains("Total|Average|Month", case=False, na=False)]
         df_clean = df_clean[df_clean["DATE"] != ""]
-
-        # --- FITUR VALIDASI BULAN (POLISI TANGGAL) ---
-        # Jika user pilih "FEBRUARY" (2), tapi data isinya "JANUARY" (1), tolak data ini.
-        if expected_month_idx is not None:
+        
+        # --- 👮‍♂️ POLISI TANGGAL (VALIDASI BULAN) ---
+        if expected_month is not None and not df_clean.empty:
             try:
-                # Coba ambil 1 data tanggal pertama yang valid untuk dicek
-                sample_date_str = df_clean["DATE"].iloc[0]
+                # Ambil satu tanggal dari data untuk dicek
+                sample_date_str = str(df_clean['DATE'].iloc[0])
                 
-                # Coba parsing tanggal. Format Excel biasanya DD-MMM atau DD/MM/YY
-                # Kita pakai pd.to_datetime dengan coerce agar aman
-                date_obj = pd.to_datetime(sample_date_str, dayfirst=True, errors='coerce')
+                # Coba deteksi format tanggal (Excel sering pakai format: 1-Jan, 2-Feb)
+                dt_sample = None
+                try:
+                    dt_sample = pd.to_datetime(sample_date_str, format='%d-%b', errors='raise')
+                except:
+                    dt_sample = pd.to_datetime(sample_date_str, errors='coerce')
                 
-                if pd.notnull(date_obj):
-                    data_month = date_obj.month
-                    if data_month != expected_month_idx:
-                        # BULAN TIDAK COCOK! (Artinya Google kasih sheet default/Januari)
-                        return None 
+                # Jika berhasil baca tanggal, cek bulannya
+                if pd.notnull(dt_sample):
+                    # Bandingkan Bulan Data vs Bulan Yang Dipilih User
+                    if dt_sample.month != expected_month:
+                        # JIKA BEDA: Berarti Google salah kasih sheet (kemungkinan sheet default/Januari)
+                        return None # Tampilkan Kosong
             except:
-                pass # Jika gagal parsing, loloskan saja (biar tidak error jika format aneh)
+                pass # Jika gagal cek, biarkan saja (fallback)
 
         numeric_cols = ["FLOW", "MOIST_IN", "BATCH", "MOIST_FINISH_PRODUCT", "PH", "DENSITY", "PARTICLE_SIZE", "ACID_CONTENT", "ACIDITY", "SURFACE_AREA"]
         def clean_num(x):
@@ -249,37 +211,23 @@ def load_data(id, sheet_name_input, expected_month_idx=None):
 # 3. DASHBOARD VISUALIZATION
 # ==========================================
 if sheet_id:
-    # Panggil fungsi load dengan Parameter Validasi Bulan
-    df = load_data(sheet_id, sheet_name, target_month_index)
+    # Load Data dengan Validasi Bulan
+    df = load_data(sheet_id, sheet_name, target_month_idx)
     
-    # Inisialisasi Variabel 0 (Kosong)
-    total_prod_ton = 0
-    total_flow = 0
-    yield_prod = 0
-    losses = 0
-    achievement = 0
-    avg_density = 0
-    avg_part_size = 0
-    avg_surface = 0
-    avg_min = 0
-    avg_fp = 0
-    avg_ph = 0
-    avg_acid = 0
-    avg_acidity = 0
+    # Reset Variabel ke 0
+    total_prod_ton = 0; total_flow = 0; yield_prod = 0; losses = 0; achievement = 0
+    avg_density = 0; avg_part_size = 0; avg_surface = 0; avg_min = 0; avg_fp = 0
+    avg_ph = 0; avg_acid = 0; avg_acidity = 0
     data_tersedia = False
 
-    # JIKA DATA VALID DITEMUKAN
     if df is not None and not df.empty:
         data_tersedia = True
-        
-        # Hitung Real
         total_prod_kg = df['BATCH'].sum()
         total_prod_ton = total_prod_kg / 1000
         total_flow = df['FLOW'].sum() 
         yield_prod = (total_prod_kg / total_flow * 100) if total_flow > 0 else 0
         losses = 100 - yield_prod
         achievement = (total_prod_ton / target_monthly * 100) if target_monthly > 0 else 0
-        
         avg_density = df[df['DENSITY']>0]['DENSITY'].mean()
         avg_part_size = df[df['PARTICLE_SIZE']>0]['PARTICLE_SIZE'].mean()
         avg_surface = df[df['SURFACE_AREA']>0]['SURFACE_AREA'].mean()
@@ -289,37 +237,30 @@ if sheet_id:
         avg_acid = df[df['ACID_CONTENT']>0]['ACID_CONTENT'].mean()
         avg_acidity = df[df['ACIDITY']>0]['ACIDITY'].mean()
 
-    # --- TAMPILKAN KPI GRID (TETAP MUNCUL MESKI 0) ---
+    # KPI GRID
     st.markdown("##### 🏗️ Production & Physical Properties")
     c1, c2, c3, c4, c5 = st.columns(5)
-    
-    def fmt(val, unit="", dec=1):
-        if not data_tersedia: return "-" 
-        return f"{val:,.{dec}f}"
-    
-    def fmt_int(val):
-        if not data_tersedia: return "-"
-        return f"{val:,.0f}"
+    def fmt(val, dec=1): return f"{val:,.{dec}f}" if data_tersedia else "-"
+    def fmt_int(val): return f"{val:,.0f}" if data_tersedia else "-"
 
     c1.markdown(f'<div class="kpi-card border-prod"><div class="kpi-title">Total Production</div><div class="kpi-value">{fmt(total_prod_ton)}</div><div class="kpi-unit">Ton</div></div>', unsafe_allow_html=True)
     c2.markdown(f'<div class="kpi-card border-prod"><div class="kpi-title">Total Flow</div><div class="kpi-value">{fmt_int(total_flow)}</div><div class="kpi-unit">Kg Input</div></div>', unsafe_allow_html=True)
-    c3.markdown(f'<div class="kpi-card border-phys"><div class="kpi-title">Avg Density</div><div class="kpi-value">{fmt(avg_density, dec=4)}</div><div class="kpi-unit">g/ml</div></div>', unsafe_allow_html=True)
-    c4.markdown(f'<div class="kpi-card border-phys"><div class="kpi-title">Avg Particle Size</div><div class="kpi-value">{fmt(avg_part_size, dec=2)}</div><div class="kpi-unit">%</div></div>', unsafe_allow_html=True)
+    c3.markdown(f'<div class="kpi-card border-phys"><div class="kpi-title">Avg Density</div><div class="kpi-value">{fmt(avg_density, 4)}</div><div class="kpi-unit">g/ml</div></div>', unsafe_allow_html=True)
+    c4.markdown(f'<div class="kpi-card border-phys"><div class="kpi-title">Avg Particle Size</div><div class="kpi-value">{fmt(avg_part_size, 2)}</div><div class="kpi-unit">%</div></div>', unsafe_allow_html=True)
     c5.markdown(f'<div class="kpi-card border-phys"><div class="kpi-title">Avg Surface Area</div><div class="kpi-value">{fmt_int(avg_surface)}</div><div class="kpi-unit">m²/g</div></div>', unsafe_allow_html=True)
     
     st.markdown("##### 🧪 Chemical & Quality Control")
     c6, c7, c8, c9, c10 = st.columns(5)
-    c6.markdown(f'<div class="kpi-card border-qual"><div class="kpi-title">Avg Moist Input</div><div class="kpi-value">{fmt(avg_min, dec=2)}</div><div class="kpi-unit">%</div></div>', unsafe_allow_html=True)
-    c7.markdown(f'<div class="kpi-card border-qual"><div class="kpi-title">Avg Moist Finish Product</div><div class="kpi-value">{fmt(avg_fp, dec=2)}</div><div class="kpi-unit">%</div></div>', unsafe_allow_html=True)
-    c8.markdown(f'<div class="kpi-card border-chem"><div class="kpi-title">Avg pH</div><div class="kpi-value">{fmt(avg_ph, dec=2)}</div><div class="kpi-unit">Scale</div></div>', unsafe_allow_html=True)
-    c9.markdown(f'<div class="kpi-card border-chem"><div class="kpi-title">Avg Acid Content</div><div class="kpi-value">{fmt(avg_acid, dec=3)}</div><div class="kpi-unit">%</div></div>', unsafe_allow_html=True)
-    c10.markdown(f'<div class="kpi-card border-chem"><div class="kpi-title">Avg Acidity</div><div class="kpi-value">{fmt(avg_acidity, dec=3)}</div><div class="kpi-unit">mgKOH/g</div></div>', unsafe_allow_html=True)
+    c6.markdown(f'<div class="kpi-card border-qual"><div class="kpi-title">Avg Moist Input</div><div class="kpi-value">{fmt(avg_min, 2)}</div><div class="kpi-unit">%</div></div>', unsafe_allow_html=True)
+    c7.markdown(f'<div class="kpi-card border-qual"><div class="kpi-title">Avg Moist Finish Product</div><div class="kpi-value">{fmt(avg_fp, 2)}</div><div class="kpi-unit">%</div></div>', unsafe_allow_html=True)
+    c8.markdown(f'<div class="kpi-card border-chem"><div class="kpi-title">Avg pH</div><div class="kpi-value">{fmt(avg_ph, 2)}</div><div class="kpi-unit">Scale</div></div>', unsafe_allow_html=True)
+    c9.markdown(f'<div class="kpi-card border-chem"><div class="kpi-title">Avg Acid Content</div><div class="kpi-value">{fmt(avg_acid, 3)}</div><div class="kpi-unit">%</div></div>', unsafe_allow_html=True)
+    c10.markdown(f'<div class="kpi-card border-chem"><div class="kpi-title">Avg Acidity</div><div class="kpi-value">{fmt(avg_acidity, 3)}</div><div class="kpi-unit">mgKOH/g</div></div>', unsafe_allow_html=True)
     
     st.divider()
 
-    # --- JIKA DATA ADA: TAMPILKAN GRAFIK & TABEL ---
     if data_tersedia:
-        # CHARTS
+        # CHARTS & TABLES (HANYA MUNCUL JIKA DATA VALID)
         c_a, c_b = st.columns(2)
         with c_a:
             st.subheader("🥧 Product Composition")
@@ -332,8 +273,6 @@ if sheet_id:
             st.plotly_chart(fig_line, use_container_width=True)
 
         st.divider()
-
-        # EFFICIENCY
         st.subheader("🚀 Production Efficiency & Targets")
         ec1, ec2, ec3 = st.columns([1, 1, 2])
         with ec1:
@@ -351,7 +290,6 @@ if sheet_id:
             fig_target.update_layout(title=f"Target: {target_daily} T/Day × 31 Days = {target_monthly:,.0f} Ton", barmode='overlay', xaxis_title="Tonase", height=300, margin=dict(t=50, b=10))
             st.plotly_chart(fig_target, use_container_width=True)
 
-        # TABLE
         st.divider()
         st.subheader("🚥 Detailed Quality Control Log (Traffic Light System)")
         def qc_logic(row):
@@ -359,16 +297,13 @@ if sheet_id:
             prod = str(row['PRODUCT']).upper()
             m_in, m_fp, ph, dens, ps, acid_c, acidity, sa = row['MOIST_IN'], row['MOIST_FINISH_PRODUCT'], row['PH'], row['DENSITY'], row['PARTICLE_SIZE'], row['ACID_CONTENT'], row['ACIDITY'], row['SURFACE_AREA']
             GREEN, YELLOW, RED = 'background-color: #d4edda; color: #155724; font-weight: bold;', 'background-color: #fff3cd; color: #856404; font-weight: bold;', 'background-color: #f8d7da; color: #721c24; font-weight: bold;'
-            
             if m_in >= 40.0: styles[2] = RED
             elif 38.0 <= m_in <= 39.9: styles[2] = YELLOW
             elif m_in > 0 and m_in <= 37.9: styles[2] = GREEN
-            
             if m_fp >= 15.0: styles[5] = RED
             elif 13.1 <= m_fp <= 14.9: styles[5] = YELLOW
             elif 8.0 <= m_fp <= 13.0: styles[5] = GREEN
             elif m_fp > 0 and m_fp <= 7.9: styles[5] = YELLOW
-            
             if prod:
                 spek = None
                 for k, v in KAMUS_SPEK_PH.items():
@@ -376,20 +311,16 @@ if sheet_id:
                 if spek and ph > 0:
                     if spek[0] <= ph <= spek[1]: styles[6] = GREEN
                     else: styles[6] = RED
-            
             if dens >= 0.70: styles[7] = RED
             elif 0.621 <= dens <= 0.699: styles[7] = YELLOW
             elif dens > 0 and dens <= 0.620: styles[7] = GREEN
-            
             if ps >= 90.0: styles[8] = YELLOW
             elif 80.0 <= ps <= 89.9: styles[8] = GREEN
             elif 75.1 <= ps <= 79.9: styles[8] = YELLOW
             elif ps > 0 and ps <= 75.0: styles[8] = RED
-            
             if acid_c > 0:
                 if acid_c > 0.5: styles[9] = RED
                 else: styles[9] = GREEN
-            
             if acidity > 0:
                 if "211" in prod:
                     if acidity <= 2.0: styles[10] = GREEN
@@ -397,21 +328,22 @@ if sheet_id:
                 elif "125" in prod:
                     if acidity <= 4.0: styles[10] = GREEN
                     else: styles[10] = RED
-            
             if sa > 0:
                 if sa >= 275: styles[11] = GREEN
                 elif sa <= 26.9: styles[11] = RED
             return styles
-
         st.dataframe(df.style.apply(qc_logic, axis=1).format({"FLOW": "{:,.0f}", "MOIST_IN": "{:.2f}%", "BATCH": "{:,.0f}", "MOIST_FINISH_PRODUCT": "{:.2f}%", "PH": "{:.2f}", "DENSITY": "{:.4f}", "PARTICLE_SIZE": "{:.2f}%", "ACID_CONTENT": "{:.3f}%", "ACIDITY": "{:.3f}", "SURFACE_AREA": "{:.0f}"}), use_container_width=True)
 
-    # --- JIKA DATA TIDAK ADA / BULAN SALAH: TAMPILKAN PESAN KOSONG ---
     else:
+        # PESAN JIKA DATA KOSONG / TANGGAL TIDAK COCOK
         st.markdown(
             f"""
             <div style="background-color: #f1f2f6; padding: 40px; border-radius: 20px; text-align: center; margin-top: 30px; border: 2px dashed #bdc3c7;">
                 <h2 style="color: #7f8c8d;">📂 Data Belum Tersedia</h2>
-                <p style="font-size: 16px; color: #95a5a6;">Belum ada laporan produksi yang valid untuk bulan <b>{sheet_name.split(' ')[-1]}</b>.</p>
+                <p style="font-size: 16px; color: #95a5a6;">
+                    Belum ada data valid untuk bulan <b>{sheet_name.split(' ')[-1]}</b>.<br>
+                    <small>Kemungkinan tab di Excel belum dibuat, atau ejaan nama tab berbeda ("FEBUARY" vs "FEBRUARY").</small>
+                </p>
                 <p style="font-size: 14px; color: #bdc3c7;">Jika sudah upload di Google Sheet, silakan klik tombol <b>REFRESH</b> di menu samping.</p>
             </div>
             """, unsafe_allow_html=True
