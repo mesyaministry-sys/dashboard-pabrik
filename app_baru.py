@@ -63,14 +63,7 @@ st.markdown("""
     .border-phys { border-left-color: #a18cd1 !important; }
     
     /* Style untuk Pesan Kosong */
-    .empty-state {
-        text-align: center;
-        padding: 40px;
-        background-color: #f8f9fa;
-        border: 2px dashed #d1d8e0;
-        border-radius: 15px;
-        color: #7f8c8d;
-    }
+    .empty-state { text-align: center; padding: 40px; background-color: #f8f9fa; border: 2px dashed #d1d8e0; border-radius: 15px; color: #7f8c8d; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -91,10 +84,7 @@ with st.sidebar:
     target_month_idx = None 
 
     if mode_input == "Pilih Bulan Otomatis":
-        bulan_map = {
-            "JANUARY": 1, "FEBRUARY": 2, "MARCH": 3, "APRIL": 4, "MAY": 5, "JUNE": 6,
-            "JULY": 7, "AUGUST": 8, "SEPTEMBER": 9, "OCTOBER": 10, "NOVEMBER": 11, "DECEMBER": 12
-        }
+        bulan_map = { "JANUARY": 1, "FEBRUARY": 2, "MARCH": 3, "APRIL": 4, "MAY": 5, "JUNE": 6, "JULY": 7, "AUGUST": 8, "SEPTEMBER": 9, "OCTOBER": 10, "NOVEMBER": 11, "DECEMBER": 12 }
         list_bulan = list(bulan_map.keys())
         pilih_bulan = st.selectbox("Pilih Bulan Laporan:", list_bulan, index=0)
         sheet_name = f"LAPORAN FP BE {pilih_bulan}"
@@ -233,7 +223,7 @@ if sheet_id:
         avg_acid = df[df['ACID_CONTENT']>0]['ACID_CONTENT'].mean()
         avg_acidity = df[df['ACIDITY']>0]['ACIDITY'].mean()
 
-    # KPI GRID (TETAP MUNCUL WALAUPUN DATA KOSONG)
+    # KPI GRID
     st.markdown("##### 🏗️ Production & Physical Properties")
     c1, c2, c3, c4, c5 = st.columns(5)
     def fmt(val, dec=1): return f"{val:,.{dec}f}" if data_tersedia else "-"
@@ -268,6 +258,42 @@ if sheet_id:
             st.subheader("📈 Moisture Trend (Input vs Finish Product)")
             fig_line = px.line(df, x='DATE', y=['MOIST_IN', 'MOIST_FINISH_PRODUCT'], markers=True)
             st.plotly_chart(fig_line, use_container_width=True)
+
+        # -------------------------------------------------------------------
+        # 🤖 AI ANALYST FEATURE (FITUR BARU)
+        # -------------------------------------------------------------------
+        st.divider()
+        st.subheader("🤖 AI Analyst (Auto-Detection)")
+        
+        # Wadah untuk pesan analisa
+        ai_messages = []
+        
+        # LOGIC 1: Moisture Finish Product > 15.0%
+        df_high_moist = df[df['MOIST_FINISH_PRODUCT'] > 15.0]
+        if not df_high_moist.empty:
+            for index, row in df_high_moist.iterrows():
+                tgl = row['DATE']
+                nilai = row['MOIST_FINISH_PRODUCT']
+                msg = f"⚠️ **PERINGATAN KRITIKAL:** Moisture Finish Product tinggi (**{nilai}%**) pada tanggal **{tgl}**. Disarankan cek suhu dryer!"
+                ai_messages.append(msg)
+        
+        # LOGIC 2: Yield < 90%
+        if yield_prod < 90.0:
+            ai_messages.append(f"📉 **EFISIENSI RENDAH:** Yield Production bulan ini hanya **{yield_prod:.1f}%** (Target >90%). Cek losses di area produksi.")
+
+        # RENDER AI MESSAGE
+        if len(ai_messages) > 0:
+            # Tampilan Jika Ada Masalah (Kotak Kuning/Merah)
+            with st.container():
+                st.markdown('<div style="background-color: #fff3cd; padding: 20px; border-radius: 10px; border-left: 6px solid #e74c3c; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">', unsafe_allow_html=True)
+                st.markdown('<h4 style="color: #c0392b; margin:0; margin-bottom:10px;">📝 Laporan Temuan Otomatis:</h4>', unsafe_allow_html=True)
+                for pesan in ai_messages:
+                    st.markdown(f"- {pesan}")
+                st.markdown('</div>', unsafe_allow_html=True)
+        else:
+            # Tampilan Jika Aman (Kotak Hijau)
+            st.success("✅ **AI Status:** Tidak ditemukan anomali kritikal pada data saat ini. Parameter Moisture dan Yield dalam kondisi aman.")
+        # -------------------------------------------------------------------
 
         st.divider()
         st.subheader("🚀 Production Efficiency & Targets")
