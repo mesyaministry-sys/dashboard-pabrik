@@ -4,6 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go 
 import urllib.parse 
 from PIL import Image 
+import datetime
 
 # ==========================================
 # ⚙️ KONFIGURASI HALAMAN
@@ -100,7 +101,7 @@ with st.sidebar:
     
     st.divider()
     
-    # --- TIME MACHINE (PILIH BULAN) ---
+    # --- PILIH BULAN (TIME MACHINE) ---
     st.header("📅 Pilih Data Bulan")
     
     default_id = "1yccpRefabM87-Ltzg0lbMHcsR2Qs6ZxPGd5A15jAHZ4"
@@ -108,12 +109,22 @@ with st.sidebar:
 
     mode_input = st.radio("Metode Pilih Tab:", ["Pilih Bulan Otomatis", "Input Nama Manual"])
     
+    target_month_index = None # Variabel untuk validasi bulan
+    
     if mode_input == "Pilih Bulan Otomatis":
-        list_bulan = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"]
+        # Mapping Nama Bulan ke Angka (Jan=1, Feb=2, dst)
+        bulan_map = {
+            "JANUARY": 1, "FEBRUARY": 2, "MARCH": 3, "APRIL": 4, "MAY": 5, "JUNE": 6,
+            "JULY": 7, "AUGUST": 8, "SEPTEMBER": 9, "OCTOBER": 10, "NOVEMBER": 11, "DECEMBER": 12
+        }
+        list_bulan = list(bulan_map.keys())
         pilih_bulan = st.selectbox("Pilih Bulan Laporan:", list_bulan, index=0)
+        
         sheet_name = f"LAPORAN FP BE {pilih_bulan}"
+        target_month_index = bulan_map[pilih_bulan] # Simpan angka bulan yang diharapkan
     else:
         sheet_name = st.text_input("Ketik Nama Tab Persis:", value="LAPORAN FP BE JANUARY")
+        target_month_index = None # Tidak ada validasi bulan untuk input manual
 
     st.info(f"Membaca Tab: **{sheet_name}**")
 
@@ -175,10 +186,10 @@ KAMUS_SPEK_PH = {
 }
 
 # ==========================================
-# 2. MESIN PEMBACA DATA
+# 2. MESIN PEMBACA DATA (DENGAN POLISI TANGGAL)
 # ==========================================
 @st.cache_data
-def load_data(id, sheet_name_input):
+def load_data(id, sheet_name_input, expected_month_idx=None):
     if sheet_name_input:
         nama_sheet_aman = urllib.parse.quote(sheet_name_input)
         url = f'https://docs.google.com/spreadsheets/d/{id}/gviz/tq?tqx=out:csv&sheet={nama_sheet_aman}'
@@ -195,14 +206,33 @@ def load_data(id, sheet_name_input):
                 break
         
         if header_row == -1: return None 
-        df_clean = df.iloc[header_row + 1:].copy()
         
+        df_clean = df.iloc[header_row + 1:].copy()
         df_clean = df_clean.iloc[:, :14] 
         df_clean.columns = ["DATE", "FLOW", "MOIST_IN", "PRODUCT", "BATCH", "MOIST_FINISH_PRODUCT", "PH", "DENSITY", "PARTICLE_SIZE", "ACID_CONTENT", "ACIDITY", "SURFACE_AREA", "BP_2_PERCENT", "STD_BP_2_PERCENT"]
         
         df_clean = df_clean[~df_clean["DATE"].str.contains("Total|Average|Month", case=False, na=False)]
         df_clean = df_clean[df_clean["DATE"] != ""]
-        
+
+        # --- FITUR VALIDASI BULAN (POLISI TANGGAL) ---
+        # Jika user pilih "FEBRUARY" (2), tapi data isinya "JANUARY" (1), tolak data ini.
+        if expected_month_idx is not None:
+            try:
+                # Coba ambil 1 data tanggal pertama yang valid untuk dicek
+                sample_date_str = df_clean["DATE"].iloc[0]
+                
+                # Coba parsing tanggal. Format Excel biasanya DD-MMM atau DD/MM/YY
+                # Kita pakai pd.to_datetime dengan coerce agar aman
+                date_obj = pd.to_datetime(sample_date_str, dayfirst=True, errors='coerce')
+                
+                if pd.notnull(date_obj):
+                    data_month = date_obj.month
+                    if data_month != expected_month_idx:
+                        # BULAN TIDAK COCOK! (Artinya Google kasih sheet default/Januari)
+                        return None 
+            except:
+                pass # Jika gagal parsing, loloskan saja (biar tidak error jika format aneh)
+
         numeric_cols = ["FLOW", "MOIST_IN", "BATCH", "MOIST_FINISH_PRODUCT", "PH", "DENSITY", "PARTICLE_SIZE", "ACID_CONTENT", "ACIDITY", "SURFACE_AREA"]
         def clean_num(x):
             try: return float(str(x).replace(',', '.').strip())
@@ -219,10 +249,10 @@ def load_data(id, sheet_name_input):
 # 3. DASHBOARD VISUALIZATION
 # ==========================================
 if sheet_id:
-    df = load_data(sheet_id, sheet_name)
+    # Panggil fungsi load dengan Parameter Validasi Bulan
+    df = load_data(sheet_id, sheet_name, target_month_index)
     
-    # --- INISIALISASI VARIABEL KOSONG (DEFAULT 0) ---
-    # Ini kuncinya: Set semua ke 0 dulu. Kalau data ada, baru diupdate.
+    # Inisialisasi Variabel 0 (Kosong)
     total_prod_ton = 0
     total_flow = 0
     yield_prod = 0
@@ -238,7 +268,7 @@ if sheet_id:
     avg_acidity = 0
     data_tersedia = False
 
-    # JIKA DATA DITEMUKAN
+    # JIKA DATA VALID DITEMUKAN
     if df is not None and not df.empty:
         data_tersedia = True
         
@@ -263,9 +293,8 @@ if sheet_id:
     st.markdown("##### 🏗️ Production & Physical Properties")
     c1, c2, c3, c4, c5 = st.columns(5)
     
-    # Fungsi Helper untuk menampilkan angka atau strip jika 0
     def fmt(val, unit="", dec=1):
-        if not data_tersedia: return "-" # Tampilkan strip jika kosong
+        if not data_tersedia: return "-" 
         return f"{val:,.{dec}f}"
     
     def fmt_int(val):
@@ -376,14 +405,14 @@ if sheet_id:
 
         st.dataframe(df.style.apply(qc_logic, axis=1).format({"FLOW": "{:,.0f}", "MOIST_IN": "{:.2f}%", "BATCH": "{:,.0f}", "MOIST_FINISH_PRODUCT": "{:.2f}%", "PH": "{:.2f}", "DENSITY": "{:.4f}", "PARTICLE_SIZE": "{:.2f}%", "ACID_CONTENT": "{:.3f}%", "ACIDITY": "{:.3f}", "SURFACE_AREA": "{:.0f}"}), use_container_width=True)
 
-    # --- JIKA DATA TIDAK ADA: TAMPILKAN PESAN KOSONG ---
+    # --- JIKA DATA TIDAK ADA / BULAN SALAH: TAMPILKAN PESAN KOSONG ---
     else:
         st.markdown(
             f"""
-            <div style="background-color: #ecf0f1; padding: 30px; border-radius: 10px; text-align: center; margin-top: 20px;">
-                <h3>📂 Data Belum Tersedia</h3>
-                <p>Belum ada laporan produksi yang di-upload untuk sheet: <b>{sheet_name}</b>.</p>
-                <p>Silakan upload data di Google Sheet, lalu klik tombol REFRESH.</p>
+            <div style="background-color: #f1f2f6; padding: 40px; border-radius: 20px; text-align: center; margin-top: 30px; border: 2px dashed #bdc3c7;">
+                <h2 style="color: #7f8c8d;">📂 Data Belum Tersedia</h2>
+                <p style="font-size: 16px; color: #95a5a6;">Belum ada laporan produksi yang valid untuk bulan <b>{sheet_name.split(' ')[-1]}</b>.</p>
+                <p style="font-size: 14px; color: #bdc3c7;">Jika sudah upload di Google Sheet, silakan klik tombol <b>REFRESH</b> di menu samping.</p>
             </div>
             """, unsafe_allow_html=True
         )
