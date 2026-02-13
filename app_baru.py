@@ -5,7 +5,6 @@ import plotly.graph_objects as go
 import urllib.parse 
 from PIL import Image 
 import datetime
-# Library baru untuk PDF
 from fpdf import FPDF
 import base64
 
@@ -51,29 +50,32 @@ if not check_login():
 
 st.markdown("""
 <style>
+    /* --- 🛡️ HIDE STREAMLIT DEFAULT ELEMENTS (GITHUB ICON, MENU, FOOTER) --- */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    [data-testid="stToolbar"] {visibility: hidden;}
+    
+    /* HEADER STYLING */
     .header-container { padding-top: 10px; padding-bottom: 20px; }
     .main-header { font-size: 42px; font-weight: 900; background: linear-gradient(90deg, #005bea 0%, #00c6fb 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: left; margin-bottom: 5px; line-height: 1.1; filter: drop-shadow(0px 0px 3px rgba(0, 198, 251, 0.3)); }
     .sub-header { font-size: 18px; color: #546e7a; text-align: left; margin-bottom: 15px; font-weight: 500; }
     .dev-credit { font-size: 15px; color: #b0bec5; font-weight: 500; font-style: italic; text-align: left; margin-top: 10px; letter-spacing: 0.5px; }
+    
+    /* KPI CARD */
     .kpi-card { background: white; border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-left: 5px solid #3498db; margin-bottom: 10px; transition: transform 0.3s, box-shadow 0.3s; }
     .kpi-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
     .kpi-title { font-size: 13px; color: #95a5a6; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
     .kpi-value { font-size: 26px; font-weight: 800; color: #2c3e50; margin-top: 8px; }
     .kpi-unit { font-size: 12px; color: #bdc3c7; font-weight: 500;}
+    
     .border-prod { border-left-color: #005bea !important; }
     .border-qual { border-left-color: #00c6fb !important; }
     .border-chem { border-left-color: #ff9a44 !important; }
     .border-phys { border-left-color: #a18cd1 !important; }
-    .empty-state { text-align: center; padding: 40px; background-color: #f8f9fa; border: 2px dashed #d1d8e0; border-radius: 15px; color: #7f8c8d; }
     
-    /* Style untuk Forecast Card */
-    .forecast-box {
-        padding: 20px;
-        border-radius: 15px;
-        color: white;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    }
+    .empty-state { text-align: center; padding: 40px; background-color: #f8f9fa; border: 2px dashed #d1d8e0; border-radius: 15px; color: #7f8c8d; }
+    .forecast-box { padding: 20px; border-radius: 15px; color: white; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
 </style>
 """, unsafe_allow_html=True)
 
@@ -141,7 +143,7 @@ with col_logo:
 with col_teks:
     st.markdown('<div class="main-header">FACTORY OPERATION DASHBOARD</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="sub-header">Monitoring Data: <b>{sheet_name}</b> | Production, Quality & Efficiency</div>', unsafe_allow_html=True)
-    st.markdown('<div class="dev-credit">✨ Created & Dev : Mahesya</div>', unsafe_allow_html=True)
+    st.markdown('<div class="dev-credit">✨ Created & Developer : Mahesya</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 st.divider()
 
@@ -204,7 +206,7 @@ def load_data(id, sheet_name_input, expected_month=None):
         return None
 
 # ==========================================
-# 🧾 FUNGSI PDF GENERATOR (NEW FEATURE)
+# 🧾 FUNGSI PDF GENERATOR
 # ==========================================
 def create_pdf(sheet_name, total_prod, achievement, messages, forecast_text):
     class PDF(FPDF):
@@ -218,7 +220,6 @@ def create_pdf(sheet_name, total_prod, achievement, messages, forecast_text):
     pdf = PDF()
     pdf.add_page()
     
-    # Section 1: Key Metrics
     pdf.set_font('Arial', 'B', 12)
     pdf.set_fill_color(230, 230, 230)
     pdf.cell(0, 10, '1. Production Summary', 1, 1, 'L', 1)
@@ -227,20 +228,17 @@ def create_pdf(sheet_name, total_prod, achievement, messages, forecast_text):
     pdf.cell(0, 10, f'Target Achievement: {achievement:.1f} %', 0, 1)
     pdf.ln(5)
     
-    # Section 2: Forecast
     pdf.set_font('Arial', 'B', 12)
     pdf.cell(0, 10, '2. Production Forecast (AI Prediction)', 1, 1, 'L', 1)
     pdf.set_font('Arial', '', 11)
     pdf.multi_cell(0, 10, forecast_text)
     pdf.ln(5)
 
-    # Section 3: AI Findings
     pdf.set_font('Arial', 'B', 12)
     pdf.cell(0, 10, '3. AI Analyst Findings (Anomalies)', 1, 1, 'L', 1)
     pdf.set_font('Arial', '', 11)
     if messages:
         for msg in messages:
-            # Clean emoji for PDF compatibility
             clean_msg = msg.replace('⚠️', '[WARNING]').replace('📉', '[DOWN]').replace('✅', '[OK]').replace('**', '')
             pdf.multi_cell(0, 10, f"- {clean_msg}")
     else:
@@ -254,7 +252,6 @@ def create_pdf(sheet_name, total_prod, achievement, messages, forecast_text):
 if sheet_id:
     df = load_data(sheet_id, sheet_name, target_month_idx)
     
-    # Inisialisasi Variabel 0 (Kosong)
     total_prod_ton = 0; total_flow = 0; yield_prod = 0; losses = 0; achievement = 0
     avg_density = 0; avg_part_size = 0; avg_surface = 0; avg_min = 0; avg_fp = 0
     avg_ph = 0; avg_acid = 0; avg_acidity = 0
@@ -312,9 +309,6 @@ if sheet_id:
             fig_line = px.line(df, x='DATE', y=['MOIST_IN', 'MOIST_FINISH_PRODUCT'], markers=True)
             st.plotly_chart(fig_line, use_container_width=True)
 
-        # -------------------------------------------------------------------
-        # 🤖 AI ANALYST & 🔮 FORECASTING ENGINE
-        # -------------------------------------------------------------------
         st.divider()
         col_ai, col_forecast = st.columns(2)
         
@@ -334,36 +328,27 @@ if sheet_id:
             else:
                 st.success("✅ Operational Status: Stable & Optimal.")
 
-        # --- FORECASTING LOGIC ---
         forecast_msg = ""
         with col_forecast:
             st.subheader("🔮 Production Forecast")
             try:
-                # 1. Hitung Hari Berjalan (Berdasarkan jumlah baris data unik tanggal)
                 days_run = len(df['DATE'].unique())
-                
-                # 2. Hitung Rata-rata Produksi per Hari
                 avg_daily_prod = total_prod_ton / days_run if days_run > 0 else 0
-                
-                # 3. Hitung Sisa Hari (Asumsi bulan 30 atau 31 hari)
-                total_days_in_month = 31 # Default January
-                if target_month_idx == 2: total_days_in_month = 28 # Feb (Simplifikasi)
+                total_days_in_month = 31 
+                if target_month_idx == 2: total_days_in_month = 28 
                 elif target_month_idx in [4, 6, 9, 11]: total_days_in_month = 30
                 
                 remaining_days = total_days_in_month - days_run
                 if remaining_days < 0: remaining_days = 0
                 
-                # 4. Prediksi Total Akhir Bulan
                 projected_total = total_prod_ton + (avg_daily_prod * remaining_days)
-                
-                # 5. Analisa Target
                 gap = projected_total - target_monthly
                 
                 if gap >= 0:
-                    bg_color = "#2ecc71" # Hijau
+                    bg_color = "#2ecc71"
                     forecast_msg = f"🚀 **ON TRACK!** Dengan rata-rata **{avg_daily_prod:.1f} Ton/Hari**, estimasi total akhir bulan adalah **{projected_total:,.0f} Ton**.\n\nAnda akan melampaui target sebesar **+{gap:,.0f} Ton**."
                 else:
-                    bg_color = "#e74c3c" # Merah
+                    bg_color = "#e74c3c"
                     shortfall = abs(gap)
                     req_rate = (target_monthly - total_prod_ton) / remaining_days if remaining_days > 0 else 0
                     forecast_msg = f"⚠️ **RISK OF MISSING TARGET.** Estimasi total hanya **{projected_total:,.0f} Ton** (Kurang {shortfall:,.0f} Ton).\n\nUntuk mengejar target, genjot produksi menjadi **{req_rate:.1f} Ton/Hari** untuk sisa {remaining_days} hari."
@@ -374,9 +359,6 @@ if sheet_id:
                 st.warning("Data belum cukup untuk forecasting.")
                 forecast_msg = "Data insufficient for forecasting."
 
-        # -------------------------------------------------------------------
-        # 📄 DOWNLOAD PDF REPORT (SIDEBAR ACTION)
-        # -------------------------------------------------------------------
         with st.sidebar:
             st.divider()
             st.markdown("### 📄 Export Report")
@@ -389,8 +371,6 @@ if sheet_id:
                     st.success("PDF Ready! Klik tombol merah di atas.")
                 except Exception as e:
                     st.error(f"Gagal membuat PDF. Pastikan library 'fpdf' terinstall. Error: {e}")
-
-        # -------------------------------------------------------------------
 
         st.divider()
         st.subheader("🚀 Production Efficiency & Targets")
@@ -411,7 +391,6 @@ if sheet_id:
             st.plotly_chart(fig_target, use_container_width=True)
 
     else:
-        # 2. JIKA DATA KOSONG -> TAMPILKAN PLACEHOLDER ESTETIK
         st.markdown(
             f"""
             <div class="empty-state">
@@ -421,7 +400,6 @@ if sheet_id:
             """, unsafe_allow_html=True
         )
 
-    # --- TABEL (SELALU MUNCUL, MESKI KOSONG) ---
     st.divider()
     st.subheader(f"🚥 Detailed Quality Control Log: {sheet_name}")
     
@@ -479,4 +457,3 @@ if sheet_id:
     else:
         st.dataframe(df_display, use_container_width=True)
         st.caption("Data belum tersedia. Tabel di atas adalah template kolom yang akan diisi.")
-
