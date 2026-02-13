@@ -10,93 +10,80 @@ from PIL import Image
 # ==========================================
 st.set_page_config(page_title="Executive Dashboard - Swasa Edition", layout="wide", page_icon="✨")
 
-# --- 🔒 SISTEM KEAMANAN (LOGIN PASSWORD) ---
-# Ganti "rahasia123" dengan password yang Bapak inginkan
-PASSWORD_RAHASIA = "pabrik2024" 
+# ==========================================
+# 🔒 SISTEM KEAMANAN (LOGIN USER & PASS)
+# ==========================================
+# Credential Baru
+USER_RAHASIA = "mahesya13"
+PASS_RAHASIA = "swasa226"
 
-def check_password():
-    """Returns `True` if the user had the correct password."""
+def check_login():
+    """Memeriksa Username dan Password"""
+    
+    if "logged_in" not in st.session_state:
+        st.session_state["logged_in"] = False
 
-    def password_entered():
-        """Checks whether a password entered by the user is correct."""
-        if st.session_state["password"] == PASSWORD_RAHASIA:
-            st.session_state["password_correct"] = True
-            del st.session_state["password"]  # Hapus password dari session agar aman
-        else:
-            st.session_state["password_correct"] = False
-
-    if "password_correct" not in st.session_state:
-        # First run, show input for password.
-        st.text_input(
-            "🔒 Masukkan Password Akses Dashboard:", 
-            type="password", 
-            on_change=password_entered, 
-            key="password"
-        )
-        st.info("Aplikasi ini terkunci. Silakan masukkan password untuk melihat data.")
-        return False
-    elif not st.session_state["password_correct"]:
-        # Password incorrect, show input + error.
-        st.text_input(
-            "🔒 Masukkan Password Akses Dashboard:", 
-            type="password", 
-            on_change=password_entered, 
-            key="password"
-        )
-        st.error("❌ Password Salah! Silakan coba lagi.")
+    if not st.session_state["logged_in"]:
+        # Tampilan Login Area
+        st.markdown(
+            """
+            <style>
+            .login-box {
+                max-width: 400px; 
+                margin: 100px auto; 
+                padding: 30px; 
+                border-radius: 15px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+                background-color: white;
+                text-align: center;
+            }
+            .stTextInput > label {font-weight:bold; color:#2c3e50;}
+            </style>
+            """, unsafe_allow_html=True)
+        
+        c1, c2, c3 = st.columns([1,2,1])
+        with c2:
+            st.markdown("### 🔒 ACCESS RESTRICTED")
+            st.info("Silakan Login untuk mengakses Dashboard Pabrik.")
+            
+            user_input = st.text_input("Username:", key="user_input")
+            pass_input = st.text_input("Password:", type="password", key="pass_input")
+            
+            if st.button("LOGIN", type="primary"):
+                if user_input == USER_RAHASIA and pass_input == PASS_RAHASIA:
+                    st.session_state["logged_in"] = True
+                    st.rerun() # Refresh halaman setelah login sukses
+                else:
+                    st.error("❌ Username atau Password Salah!")
+            
         return False
     else:
-        # Password correct.
         return True
 
-# JIKA PASSWORD BELUM BENAR, STOP DI SINI (JANGAN TAMPILKAN DASHBOARD)
-if not check_password():
+# JIKA BELUM LOGIN, STOP DI SINI
+if not check_login():
     st.stop()
 
 # ==========================================
-# 🚀 MULAI KONTEN DASHBOARD (HANYA MUNCUL SETELAH LOGIN)
+# 🚀 MULAI KONTEN DASHBOARD (SETELAH LOGIN)
 # ==========================================
 
-# CSS Styling Pro (Updated Header Design)
+# CSS Styling Pro
 st.markdown("""
 <style>
-    /* --- HEADER STYLING BARU (SWASA STYLE) --- */
-    .header-container {
-        padding-top: 10px;
-        padding-bottom: 20px;
-    }
-    
+    /* HEADER STYLING */
+    .header-container { padding-top: 10px; padding-bottom: 20px; }
     .main-header {
-        font-size: 42px; 
-        font-weight: 900; 
+        font-size: 42px; font-weight: 900; 
         background: linear-gradient(90deg, #005bea 0%, #00c6fb 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        text-align: left;
-        margin-bottom: 5px;
-        line-height: 1.1;
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        text-align: left; margin-bottom: 5px; line-height: 1.1;
         filter: drop-shadow(0px 0px 3px rgba(0, 198, 251, 0.3));
     }
-    
-    .sub-header {
-        font-size: 18px; 
-        color: #546e7a; 
-        text-align: left; 
-        margin-bottom: 15px;
-        font-weight: 500;
-    }
-    
-    .dev-credit {
-        font-size: 15px;
-        color: #b0bec5; 
-        font-weight: 500;
-        font-style: italic;
-        text-align: left;
-        margin-top: 10px;
-        letter-spacing: 0.5px;
-    }
+    .sub-header { font-size: 18px; color: #546e7a; text-align: left; margin-bottom: 15px; font-weight: 500; }
+    .dev-credit { font-size: 15px; color: #b0bec5; font-weight: 500; font-style: italic; text-align: left; margin-top: 10px; letter-spacing: 0.5px; }
 
-    /* --- KPI Card --- */
+    /* KPI CARD */
     .kpi-card {
         background: white; border-radius: 15px; padding: 20px; text-align: center;
         box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-left: 5px solid #3498db;
@@ -115,65 +102,80 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 1. SETUP DATA & SIDEBAR
+# 1. SIDEBAR (PENGATURAN DATA BULANAN)
 # ==========================================
 with st.sidebar:
-    st.header("🗂️ Settings")
-    st.subheader("🖼️ Logo Dashboard")
-    uploaded_file = st.file_uploader("Upload Logo (PNG/JPG):", type=['png', 'jpg', 'jpeg'])
+    st.title("🎛️ Control Panel")
+    
+    # --- FITUR UPLOAD LOGO ---
+    with st.expander("🖼️ Logo Dashboard"):
+        uploaded_file = st.file_uploader("Ganti Logo (PNG/JPG):", type=['png', 'jpg', 'jpeg'])
     
     st.divider()
     
-    st.header("🗂️ Database Connection")
+    # --- PILIH SUMBER DATA (GANTI BULAN/TAHUN) ---
+    st.header("📅 Pilih Data Bulan")
+    
     default_id = "1yccpRefabM87-Ltzg0lbMHcsR2Qs6ZxPGd5A15jAHZ4"
-    sheet_id = st.text_input("1. ID Google Sheet:", value=default_id)
-    sheet_name = st.text_input("2. Nama Sheet (Tab):", value="LAPORAN FP BE JANUARY") 
+    sheet_id = st.text_input("ID Google Sheet (File):", value=default_id, help="Ganti ID ini jika membuat File Excel Baru untuk Tahun Baru")
+
+    # Mode Pemilihan Tab Sheet
+    mode_input = st.radio("Metode Pilih Tab:", ["Pilih Bulan Otomatis", "Input Nama Manual"])
     
+    if mode_input == "Pilih Bulan Otomatis":
+        # Dropdown Bulan
+        list_bulan = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"]
+        pilih_bulan = st.selectbox("Pilih Bulan Laporan:", list_bulan, index=0)
+        
+        # Generator Nama Sheet Otomatis
+        # Format sesuai Excel Bapak: "LAPORAN FP BE [BULAN]"
+        sheet_name = f"LAPORAN FP BE {pilih_bulan}"
+        st.info(f"Membaca Tab: **{sheet_name}**")
+        
+    else:
+        # Input Manual (Jika format nama tab berubah, misal ada tahunnya)
+        sheet_name = st.text_input("Ketik Nama Tab Persis:", value="LAPORAN FP BE JANUARY")
+
     st.divider()
+    
     st.header("🎯 Target Setting")
     target_daily = st.number_input("Target Harian (Ton/Hari):", value=45.0, step=1.0)
     target_monthly = target_daily * 31
-    st.caption(f"Estimasi Target Sebulan ({target_daily} x 31 Hari): **{target_monthly:,.0f} Ton**")
+    st.caption(f"Target Bulanan: **{target_monthly:,.0f} Ton**")
     
     st.divider()
-    if st.button("🔄 REFRESH DATA", type="primary"):
-        st.cache_data.clear()
-        st.rerun()
-    
-    st.divider()
-    # Tombol Logout
-    if st.button("🔒 LOGOUT"):
-        del st.session_state["password_correct"]
-        st.rerun()
+    col_btn1, col_btn2 = st.columns(2)
+    with col_btn1:
+        if st.button("🔄 REFRESH", type="primary"):
+            st.cache_data.clear()
+            st.rerun()
+    with col_btn2:
+        if st.button("🔒 LOGOUT"):
+            del st.session_state["logged_in"]
+            st.rerun()
 
 # ==========================================
 # 🖼️ HEADER SECTION
 # ==========================================
 st.markdown('<div class="header-container">', unsafe_allow_html=True)
-
 col_logo, col_teks = st.columns([1.2, 5], gap="large")
 
 with col_logo:
     try:
-        if uploaded_file is not None:
+        if uploaded_file:
             image = Image.open(uploaded_file)
             st.image(image, use_container_width=True)
         else:
-            try:
-                st.image("image_0.png", use_container_width=True)
-            except:
-                try:
-                    st.image("image_0.jpg", use_container_width=True)
-                except:
-                    st.info("🖼️ Logo belum ada.")
-    except:
-        st.error("Gagal memuat gambar")
-
+            try: st.image("image_0.png", use_container_width=True)
+            except: 
+                try: st.image("image_0.jpg", use_container_width=True)
+                except: st.info("Logo Placeholder")
+    except: st.error("Error Logo")
     st.markdown("""<style>[data-testid="stImage"] img {border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);}</style>""", unsafe_allow_html=True)
 
 with col_teks:
     st.markdown('<div class="main-header">FACTORY OPERATION DASHBOARD</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sub-header">Real-time Production, Quality & Efficiency Monitoring System</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="sub-header">Monitoring Data: <b>{sheet_name}</b> | Production, Quality & Efficiency</div>', unsafe_allow_html=True)
     st.markdown('<div class="dev-credit">✨ Created & Developer : Mahesya</div>', unsafe_allow_html=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
@@ -213,12 +215,10 @@ def load_data(id, sheet_name_input):
                 break
         
         if header_row == -1:
-            st.error("❌ Header tidak ditemukan.")
-            st.stop()
+            return None # Indikasi tab tidak ditemukan
             
         df_clean = df.iloc[header_row + 1:].copy()
         
-        # MAPPING KOLOM (GANTI OUTPUT -> FINISH PRODUCT)
         df_clean = df_clean.iloc[:, :14] 
         df_clean.columns = [
             "DATE", "FLOW", "MOIST_IN", "PRODUCT", "BATCH", 
@@ -326,25 +326,22 @@ if sheet_id:
 
         # TABLE
         st.divider()
-        st.subheader("🚥 Detailed Quality Control Log (Traffic Light System)")
+        st.subheader(f"🚥 Detailed Log: {sheet_name}")
         def qc_logic(row):
             styles = [''] * len(row)
             prod = str(row['PRODUCT']).upper()
             m_in, m_fp, ph, dens, ps, acid_c, acidity, sa = row['MOIST_IN'], row['MOIST_FINISH_PRODUCT'], row['PH'], row['DENSITY'], row['PARTICLE_SIZE'], row['ACID_CONTENT'], row['ACIDITY'], row['SURFACE_AREA']
             GREEN, YELLOW, RED = 'background-color: #d4edda; color: #155724; font-weight: bold;', 'background-color: #fff3cd; color: #856404; font-weight: bold;', 'background-color: #f8d7da; color: #721c24; font-weight: bold;'
             
-            # Moist In (Index 2)
             if m_in >= 40.0: styles[2] = RED
             elif 38.0 <= m_in <= 39.9: styles[2] = YELLOW
             elif m_in > 0 and m_in <= 37.9: styles[2] = GREEN
             
-            # Moist Finish Product (Index 5)
             if m_fp >= 15.0: styles[5] = RED
             elif 13.1 <= m_fp <= 14.9: styles[5] = YELLOW
             elif 8.0 <= m_fp <= 13.0: styles[5] = GREEN
             elif m_fp > 0 and m_fp <= 7.9: styles[5] = YELLOW
             
-            # PH (Index 6)
             if prod:
                 spek = None
                 for k, v in KAMUS_SPEK_PH.items():
@@ -353,23 +350,19 @@ if sheet_id:
                     if spek[0] <= ph <= spek[1]: styles[6] = GREEN
                     else: styles[6] = RED
             
-            # Density (Index 7)
             if dens >= 0.70: styles[7] = RED
             elif 0.621 <= dens <= 0.699: styles[7] = YELLOW
             elif dens > 0 and dens <= 0.620: styles[7] = GREEN
             
-            # Particle Size (Index 8)
             if ps >= 90.0: styles[8] = YELLOW
             elif 80.0 <= ps <= 89.9: styles[8] = GREEN
             elif 75.1 <= ps <= 79.9: styles[8] = YELLOW
             elif ps > 0 and ps <= 75.0: styles[8] = RED
             
-            # Acid Content (Index 9)
             if acid_c > 0:
                 if acid_c > 0.5: styles[9] = RED
                 else: styles[9] = GREEN
             
-            # Acidity (Index 10)
             if acidity > 0:
                 if "211" in prod:
                     if acidity <= 2.0: styles[10] = GREEN
@@ -378,10 +371,14 @@ if sheet_id:
                     if acidity <= 4.0: styles[10] = GREEN
                     else: styles[10] = RED
             
-            # Surface Area (Index 11)
             if sa > 0:
                 if sa >= 275: styles[11] = GREEN
                 elif sa <= 26.9: styles[11] = RED
             return styles
 
         st.dataframe(df.style.apply(qc_logic, axis=1).format({"FLOW": "{:,.0f}", "MOIST_IN": "{:.2f}%", "BATCH": "{:,.0f}", "MOIST_FINISH_PRODUCT": "{:.2f}%", "PH": "{:.2f}", "DENSITY": "{:.4f}", "PARTICLE_SIZE": "{:.2f}%", "ACID_CONTENT": "{:.3f}%", "ACIDITY": "{:.3f}", "SURFACE_AREA": "{:.0f}"}), use_container_width=True)
+    
+    else:
+        # Tampilan Jika Tab Tidak Ditemukan
+        st.warning(f"⚠️ Tab Excel bernama **'{sheet_name}'** tidak ditemukan!")
+        st.info("Saran: Cek menu samping (Sidebar) > Pilih 'Metode Pilih Tab' > Ganti ke 'Input Nama Manual' jika nama tab di Excel berbeda (misal pakai tahun).")
