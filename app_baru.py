@@ -143,7 +143,7 @@ with col_logo:
 with col_teks:
     st.markdown('<div class="main-header">FACTORY OPERATION DASHBOARD</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="sub-header">Monitoring Data: <b>{sheet_name}</b> | Production, Quality & Efficiency</div>', unsafe_allow_html=True)
-    st.markdown('<div class="dev-credit">✨ Created & Developer : Mahesya</div>', unsafe_allow_html=True)
+    st.markdown('<div class="dev-credit">✨ Created & Dev : Mahesya</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 st.divider()
 
@@ -457,3 +457,4 @@ if sheet_id:
     else:
         st.dataframe(df_display, use_container_width=True)
         st.caption("Data belum tersedia. Tabel di atas adalah template kolom yang akan diisi.")
+
