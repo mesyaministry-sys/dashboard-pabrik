@@ -16,8 +16,8 @@ st.set_page_config(page_title="Executive Dashboard - Swasa Edition", layout="wid
 # ==========================================
 # 🔒 SISTEM KEAMANAN (LOGIN USER & PASS)
 # ==========================================
-USER_RAHASIA = ""
-PASS_RAHASIA = ""
+USER_RAHASIA = "mahesya13"
+PASS_RAHASIA = "swasa226"
 
 def check_login():
     if "logged_in" not in st.session_state:
@@ -457,5 +457,6 @@ if sheet_id:
     else:
         st.dataframe(df_display, use_container_width=True)
         st.caption("Data belum tersedia. Tabel di atas adalah template kolom yang akan diisi.")
+
 
 
