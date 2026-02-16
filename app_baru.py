@@ -96,7 +96,7 @@ with st.sidebar:
     target_month_idx = None 
 
     if mode_input == "Pilih Bulan Otomatis":
-        bulan_map = { "JANUARY": 1, "FEBRUARY": "1MHNmJpBXMHdgHdP85Wogm4olK1dgiIFTySpEzTrqzEg" 2, "MARCH": 3, "APRIL": 4, "MAY": 5, "JUNE": 6, "JULY": 7, "AUGUST": 8, "SEPTEMBER": 9, "OCTOBER": 10, "NOVEMBER": 11, "DECEMBER": 12 }
+        bulan_map = { "JANUARY": 1, "FEBRUARY": 2, "MARCH": 3, "APRIL": 4, "MAY": 5, "JUNE": 6, "JULY": 7, "AUGUST": 8, "SEPTEMBER": 9, "OCTOBER": 10, "NOVEMBER": 11, "DECEMBER": 12 }
         list_bulan = list(bulan_map.keys())
         pilih_bulan = st.selectbox("Pilih Bulan Laporan:", list_bulan, index=0)
         sheet_name = f"LAPORAN FP BE {pilih_bulan}"
@@ -457,6 +457,7 @@ if sheet_id:
     else:
         st.dataframe(df_display, use_container_width=True)
         st.caption("Data belum tersedia. Tabel di atas adalah template kolom yang akan diisi.")
+
 
 
 
