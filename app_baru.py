@@ -7,6 +7,7 @@ from PIL import Image
 import datetime
 from fpdf import FPDF
 import base64
+import re
 
 # ==========================================
 # ⚙️ KONFIGURASI HALAMAN
@@ -80,7 +81,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 1. SIDEBAR
+# 1. SIDEBAR (MODIFIED FOR MULTI-MONTH ID)
 # ==========================================
 with st.sidebar:
     st.title("🎛️ Control Panel")
@@ -89,20 +90,49 @@ with st.sidebar:
     
     st.divider()
     st.header("📅 Pilih Data Bulan")
-    default_id = "1yccpRefabM87-Ltzg0lbMHcsR2Qs6ZxPGd5A15jAHZ4"
-    sheet_id = st.text_input("ID Google Sheet:", value=default_id)
 
+    # -------------------------------------------------------------
+    # 👇 TEMPAT MASUKKAN ID GOOGLE SHEET PER BULAN DI SINI 👇
+    # -------------------------------------------------------------
+    DATABASE_ID = {
+        "JANUARY": "1yccpRefabM87-Ltzg0lbMHcsR2Qs6ZxPGd5A15jAHZ4", # ID Lama
+        "FEBRUARY": "1MHNmJpBXMHdgHdP85Wogm4olK1dgiIFTySpEzTrqzEg", # Masukkan ID Sheet Februari di dalam kutip
+        "MARCH": "",    # Masukkan ID Sheet Maret di dalam kutip
+        "APRIL": "",    
+        "MAY": "",
+        "JUNE": "",
+        "JULY": "",
+        "AUGUST": "",
+        "SEPTEMBER": "",
+        "OCTOBER": "",
+        "NOVEMBER": "",
+        "DECEMBER": ""
+    }
+    # -------------------------------------------------------------
+
+    # Mapping nama bulan ke angka (untuk logika forecast)
+    bulan_map = { "JANUARY": 1, "FEBRUARY": 2, "MARCH": 3, "APRIL": 4, "MAY": 5, "JUNE": 6, "JULY": 7, "AUGUST": 8, "SEPTEMBER": 9, "OCTOBER": 10, "NOVEMBER": 11, "DECEMBER": 12 }
+    list_bulan = list(bulan_map.keys())
+    
+    # 1. Pilih Bulan Dulu
+    pilih_bulan = st.selectbox("Pilih Bulan Laporan:", list_bulan, index=0)
+
+    # 2. Ambil ID berdasarkan bulan yang dipilih
+    current_id = DATABASE_ID.get(pilih_bulan, "")
+    
+    # 3. Tampilkan di Text Input (Bisa diedit manual jika perlu)
+    sheet_id = st.text_input("ID Google Sheet:", value=current_id)
+
+    # 4. Setting Nama Tab/Sheet
     mode_input = st.radio("Metode Pilih Tab:", ["Pilih Bulan Otomatis", "Input Nama Manual"])
     target_month_idx = None 
 
     if mode_input == "Pilih Bulan Otomatis":
-        bulan_map = { "JANUARY": 1, "FEBRUARY": 2, "MARCH": 3, "APRIL": 4, "MAY": 5, "JUNE": 6, "JULY": 7, "AUGUST": 8, "SEPTEMBER": 9, "OCTOBER": 10, "NOVEMBER": 11, "DECEMBER": 12 }
-        list_bulan = list(bulan_map.keys())
-        pilih_bulan = st.selectbox("Pilih Bulan Laporan:", list_bulan, index=0)
+        # Otomatis membuat nama tab, misal: "LAPORAN FP BE FEBRUARY"
         sheet_name = f"LAPORAN FP BE {pilih_bulan}"
         target_month_idx = bulan_map[pilih_bulan] 
     else:
-        sheet_name = st.text_input("Ketik Nama Tab Persis:", value="LAPORAN FP BE JANUARY")
+        sheet_name = st.text_input("Ketik Nama Tab Persis:", value=f"LAPORAN FP BE {pilih_bulan}")
         target_month_idx = None 
 
     st.info(f"Target Tab: **{sheet_name}**")
@@ -121,7 +151,7 @@ with st.sidebar:
             st.rerun()
     with col_btn2:
         if st.button("🔒 LOGOUT"):
-            del st.session_state["logged_in"]
+            st.session_state["logged_in"] = False
             st.rerun()
 
 # ==========================================
@@ -157,6 +187,8 @@ KAMUS_SPEK_PH = { "Z 125": [3.0, 5.0], "Z 211": [3.5, 5.5], "Z 211 SC": [4.0, 7.
 # ==========================================
 @st.cache_data
 def load_data(id, sheet_name_input, expected_month=None):
+    if not id: return None # Cegah error jika ID kosong
+
     if sheet_name_input:
         nama_sheet_aman = urllib.parse.quote(sheet_name_input)
         url = f'https://docs.google.com/spreadsheets/d/{id}/gviz/tq?tqx=out:csv&sheet={nama_sheet_aman}'
@@ -166,7 +198,7 @@ def load_data(id, sheet_name_input, expected_month=None):
     try:
         df = pd.read_csv(url, header=None, dtype=str, keep_default_na=False)
         header_row = -1
-        for i in range(15):
+        for i in range(min(20, len(df))): # Scan 20 baris pertama saja biar cepat
             row_str = " ".join(df.iloc[i].astype(str).tolist()).upper()
             if "DATE" in row_str and "FLOW" in row_str:
                 header_row = i
@@ -175,6 +207,8 @@ def load_data(id, sheet_name_input, expected_month=None):
         if header_row == -1: return None 
         
         df_clean = df.iloc[header_row + 1:].copy()
+        if df_clean.shape[1] < 14: return None # Cek kelengkapan kolom
+
         df_clean = df_clean.iloc[:, :14] 
         df_clean.columns = ["DATE", "FLOW", "MOIST_IN", "PRODUCT", "BATCH", "MOIST_FINISH_PRODUCT", "PH", "DENSITY", "PARTICLE_SIZE", "ACID_CONTENT", "ACIDITY", "SURFACE_AREA", "BP_2_PERCENT", "STD_BP_2_PERCENT"]
         
@@ -189,8 +223,8 @@ def load_data(id, sheet_name_input, expected_month=None):
                 except: dt_sample = pd.to_datetime(sample_date_str, errors='coerce')
                 
                 if pd.notnull(dt_sample):
-                    if dt_sample.month != expected_month:
-                        return None 
+                    # Logika check bulan (optional, di-bypass agar fleksibel)
+                    pass 
             except: pass
 
         numeric_cols = ["FLOW", "MOIST_IN", "BATCH", "MOIST_FINISH_PRODUCT", "PH", "DENSITY", "PARTICLE_SIZE", "ACID_CONTENT", "ACIDITY", "SURFACE_AREA"]
@@ -457,10 +491,3 @@ if sheet_id:
     else:
         st.dataframe(df_display, use_container_width=True)
         st.caption("Data belum tersedia. Tabel di atas adalah template kolom yang akan diisi.")
-
-
-
-
-
-
-
