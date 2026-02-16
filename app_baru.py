@@ -90,6 +90,7 @@ with st.sidebar:
     st.divider()
     st.header("📅 Pilih Data Bulan")
     default_id = "1yccpRefabM87-Ltzg0lbMHcsR2Qs6ZxPGd5A15jAHZ4"
+    default_id = "1MHNmJpBXMHdgHdP85Wogm4olK1dgiIFTySpEzTrqzEg"
     sheet_id = st.text_input("ID Google Sheet:", value=default_id)
 
     mode_input = st.radio("Metode Pilih Tab:", ["Pilih Bulan Otomatis", "Input Nama Manual"])
@@ -457,6 +458,7 @@ if sheet_id:
     else:
         st.dataframe(df_display, use_container_width=True)
         st.caption("Data belum tersedia. Tabel di atas adalah template kolom yang akan diisi.")
+
 
 
 
