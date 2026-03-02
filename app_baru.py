@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 import urllib.parse 
 from PIL import Image 
 import datetime
+import calendar # <-- TAMBAHAN LIBRARY UNTUK MEMBACA JUMLAH HARI OTOMATIS
 from fpdf import FPDF
 import base64
 import re
@@ -95,9 +96,9 @@ with st.sidebar:
     # 👇 TEMPAT MASUKKAN ID GOOGLE SHEET PER BULAN DI SINI 👇
     # -------------------------------------------------------------
     DATABASE_ID = {
-        "JANUARY": "1yccpRefabM87-Ltzg0lbMHcsR2Qs6ZxPGd5A15jAHZ4", # ID Lama
-        "FEBRUARY": "1MHNmJpBXMHdgHdP85Wogm4olK1dgiIFTySpEzTrqzEg", # Masukkan ID Sheet Februari di dalam kutip
-        "MARCH": "",    # Masukkan ID Sheet Maret di dalam kutip
+        "JANUARY": "1yccpRefabM87-Ltzg0lbMHcsR2Qs6ZxPGd5A15jAHZ4", 
+        "FEBRUARY": "1MHNmJpBXMHdgHdP85Wogm4olK1dgiIFTySpEzTrqzEg", 
+        "MARCH": "",    
         "APRIL": "",    
         "MAY": "",
         "JUNE": "",
@@ -117,6 +118,13 @@ with st.sidebar:
     # 1. Pilih Bulan Dulu
     pilih_bulan = st.selectbox("Pilih Bulan Laporan:", list_bulan, index=0)
 
+    # --- LOGIKA OTOMATIS HITUNG HARI PER BULAN ---
+    tahun_sekarang = datetime.datetime.now().year
+    bulan_angka = bulan_map[pilih_bulan]
+    # calendar.monthrange mengembalikan tuple (hari_pertama, jumlah_hari)
+    jumlah_hari_bulan_ini = calendar.monthrange(tahun_sekarang, bulan_angka)[1]
+    # ---------------------------------------------
+
     # 2. Ambil ID berdasarkan bulan yang dipilih
     current_id = DATABASE_ID.get(pilih_bulan, "")
     
@@ -130,18 +138,20 @@ with st.sidebar:
     if mode_input == "Pilih Bulan Otomatis":
         # Otomatis membuat nama tab, misal: "LAPORAN FP BE FEBRUARY"
         sheet_name = f"LAPORAN FP BE {pilih_bulan}"
-        target_month_idx = bulan_map[pilih_bulan] 
+        target_month_idx = bulan_angka 
     else:
         sheet_name = st.text_input("Ketik Nama Tab Persis:", value=f"LAPORAN FP BE {pilih_bulan}")
-        target_month_idx = None 
+        target_month_idx = bulan_angka 
 
     st.info(f"Target Tab: **{sheet_name}**")
 
     st.divider()
     st.header("🎯 Target Setting")
     target_daily = st.number_input("Target Harian (Ton/Hari):", value=45.0, step=1.0)
-    target_monthly = target_daily * 31
-    st.caption(f"Target Bulanan: **{target_monthly:,.0f} Ton**")
+    
+    # --- UPDATE: Target bulanan otomatis dikalikan jumlah hari akurat ---
+    target_monthly = target_daily * jumlah_hari_bulan_ini
+    st.caption(f"Target Bulanan ({jumlah_hari_bulan_ini} Hari): **{target_monthly:,.0f} Ton**")
     
     st.divider()
     col_btn1, col_btn2 = st.columns(2)
@@ -368,9 +378,9 @@ if sheet_id:
             try:
                 days_run = len(df['DATE'].unique())
                 avg_daily_prod = total_prod_ton / days_run if days_run > 0 else 0
-                total_days_in_month = 31 
-                if target_month_idx == 2: total_days_in_month = 28 
-                elif target_month_idx in [4, 6, 9, 11]: total_days_in_month = 30
+                
+                # --- UPDATE: Ambil jumlah hari bulan dari variabel yang sudah dihitung ---
+                total_days_in_month = jumlah_hari_bulan_ini 
                 
                 remaining_days = total_days_in_month - days_run
                 if remaining_days < 0: remaining_days = 0
@@ -421,7 +431,9 @@ if sheet_id:
             fig_target = go.Figure()
             fig_target.add_trace(go.Bar(x=[total_prod_ton], y=['Achievement'], orientation='h', name='Actual', marker_color='#005bea', text=[f"{total_prod_ton:,.0f} T"], textposition='auto'))
             fig_target.add_trace(go.Bar(x=[target_monthly], y=['Achievement'], orientation='h', name='Monthly Target', marker_color='#ecf0f1', marker_line_color='#95a5a6', marker_line_width=2, opacity=0.6, text=[f"Target: {target_monthly:,.0f} T"], textposition='outside'))
-            fig_target.update_layout(title=f"Target: {target_daily} T/Day × 31 Days = {target_monthly:,.0f} Ton", barmode='overlay', xaxis_title="Tonase", height=300, margin=dict(t=50, b=10))
+            
+            # --- UPDATE: Teks pada judul grafik otomatis berubah mengikuti variabel ---
+            fig_target.update_layout(title=f"Target: {target_daily} T/Day × {jumlah_hari_bulan_ini} Days = {target_monthly:,.0f} Ton", barmode='overlay', xaxis_title="Tonase", height=300, margin=dict(t=50, b=10))
             st.plotly_chart(fig_target, use_container_width=True)
 
     else:
