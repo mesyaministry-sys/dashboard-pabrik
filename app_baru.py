@@ -98,7 +98,7 @@ with st.sidebar:
     DATABASE_ID = {
         "JANUARY": "1yccpRefabM87-Ltzg0lbMHcsR2Qs6ZxPGd5A15jAHZ4", 
         "FEBRUARY": "1MHNmJpBXMHdgHdP85Wogm4olK1dgiIFTySpEzTrqzEg", 
-        "MARCH": "1PdQn2ukPf6If5DnoETN7cjGeerPVoT5gOIZOZ6-FjLA",    
+        "MARCH": "",    
         "APRIL": "",    
         "MAY": "",
         "JUNE": "",
@@ -503,4 +503,5 @@ if sheet_id:
     else:
         st.dataframe(df_display, use_container_width=True)
         st.caption("Data belum tersedia. Tabel di atas adalah template kolom yang akan diisi.")
+
 
