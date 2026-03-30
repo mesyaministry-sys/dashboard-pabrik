@@ -16,6 +16,24 @@ import re
 st.set_page_config(page_title="Executive Dashboard - Swasa Edition", layout="wide", page_icon="✨")
 
 # ==========================================
+# 🚫 SEMBUNYIKAN ELEMEN STREAMLIT (MENU, GITHUB, FOOTER)
+# Dipindah ke paling atas agar berlaku di halaman Login juga!
+# ==========================================
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden !important;}
+            footer {visibility: hidden !important;}
+            header {visibility: hidden !important;}
+            [data-testid="stHeader"] {visibility: hidden !important;}
+            [data-testid="stToolbar"] {visibility: hidden !important;}
+            [data-testid="stDecoration"] {visibility: hidden !important;}
+            .stDeployButton {display: none !important;}
+            .reportview-container .main .block-container {padding-top: 1rem;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+# ==========================================
 # 🔒 SISTEM KEAMANAN (LOGIN USER & PASS)
 # ==========================================
 USER_RAHASIA = "mahesya13"
@@ -50,14 +68,9 @@ if not check_login():
 # 🚀 MULAI KONTEN DASHBOARD
 # ==========================================
 
+# CSS khusus untuk tampilan Dashboard (tidak termasuk perintah hide Streamlit lagi)
 st.markdown("""
 <style>
-    /* --- 🛡️ HIDE STREAMLIT DEFAULT ELEMENTS (GITHUB ICON, MENU, FOOTER) --- */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    [data-testid="stToolbar"] {visibility: hidden;}
-    
     /* HEADER STYLING */
     .header-container { padding-top: 10px; padding-bottom: 20px; }
     .main-header { font-size: 42px; font-weight: 900; background: linear-gradient(90deg, #005bea 0%, #00c6fb 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: left; margin-bottom: 5px; line-height: 1.1; filter: drop-shadow(0px 0px 3px rgba(0, 198, 251, 0.3)); }
@@ -503,9 +516,3 @@ if sheet_id:
     else:
         st.dataframe(df_display, use_container_width=True)
         st.caption("Data belum tersedia. Tabel di atas adalah template kolom yang akan diisi.")
-
-
-
-
-
-
