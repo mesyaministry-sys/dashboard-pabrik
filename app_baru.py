@@ -3,9 +3,8 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go 
 import urllib.parse 
-from PIL import Image 
 import datetime
-import calendar # <-- TAMBAHAN LIBRARY UNTUK MEMBACA JUMLAH HARI OTOMATIS
+import calendar
 from fpdf import FPDF
 import base64
 import re
@@ -99,8 +98,6 @@ st.markdown("""
 # ==========================================
 with st.sidebar:
     st.title("🎛️ Control Panel")
-    with st.expander("🖼️ Logo Dashboard"):
-        uploaded_file = st.file_uploader("Ganti Logo (PNG/JPG):", type=['png', 'jpg', 'jpeg'])
     
     st.divider()
     st.header("📅 Pilih Data Bulan")
@@ -144,17 +141,9 @@ with st.sidebar:
     # 3. Tampilkan di Text Input (Bisa diedit manual jika perlu)
     sheet_id = st.text_input("ID Google Sheet:", value=current_id)
 
-    # 4. Setting Nama Tab/Sheet
-    mode_input = st.radio("Metode Pilih Tab:", ["Pilih Bulan Otomatis", "Input Nama Manual"])
-    target_month_idx = None 
-
-    if mode_input == "Pilih Bulan Otomatis":
-        # Otomatis membuat nama tab, misal: "LAPORAN FP BE FEBRUARY"
-        sheet_name = f"LAPORAN FP BE {pilih_bulan}"
-        target_month_idx = bulan_angka 
-    else:
-        sheet_name = st.text_input("Ketik Nama Tab Persis:", value=f"LAPORAN FP BE {pilih_bulan}")
-        target_month_idx = bulan_angka 
+    # 4. Setting Nama Tab/Sheet (Otomatis)
+    sheet_name = f"LAPORAN FP BE {pilih_bulan}"
+    target_month_idx = bulan_angka 
 
     st.info(f"Target Tab: **{sheet_name}**")
 
@@ -181,17 +170,7 @@ with st.sidebar:
 # 🖼️ HEADER
 # ==========================================
 st.markdown('<div class="header-container">', unsafe_allow_html=True)
-col_logo, col_teks = st.columns([1.2, 5], gap="large")
-with col_logo:
-    try:
-        if uploaded_file: image = Image.open(uploaded_file); st.image(image, use_container_width=True)
-        else:
-            try: st.image("image_0.png", use_container_width=True)
-            except: 
-                try: st.image("image_0.jpg", use_container_width=True)
-                except: st.info("Logo")
-    except: st.error("Error Logo")
-    st.markdown("""<style>[data-testid="stImage"] img {border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);}</style>""", unsafe_allow_html=True)
+col_teks = st.container()
 
 with col_teks:
     st.markdown('<div class="main-header">FACTORY OPERATION DASHBOARD</div>', unsafe_allow_html=True)
@@ -203,7 +182,7 @@ st.divider()
 # ==========================================
 # 📘 KAMUS SPEK
 # ==========================================
-KAMUS_SPEK_PH = { "Z 125": [3.0, 5.0], "Z 211": [3.5, 5.5], "Z 211 SC": [4.0, 7.0], "Z 221 S": [4.0, 7.0], "Z 127": [4.0, 7.0], "Z 301": [4.0, 7.0] }
+KAMUS_SPEK_PH = { "Z 125": [3.0, 5.0], "Z 211": [3.5, 5.5], "Z 211 SC": [5.0, 6.5], "Z 221 S": [4.0, 7.0], "Z 127": [4.0, 7.0], "Z 301": [4.0, 7.0] }
 
 # ==========================================
 # 2. MESIN PEMBACA DATA
@@ -475,30 +454,50 @@ if sheet_id:
         m_in, m_fp, ph, dens, ps, acid_c, acidity, sa = row['MOIST_IN'], row['MOIST_FINISH_PRODUCT'], row['PH'], row['DENSITY'], row['PARTICLE_SIZE'], row['ACID_CONTENT'], row['ACIDITY'], row['SURFACE_AREA']
         GREEN, YELLOW, RED = 'background-color: #d4edda; color: #155724; font-weight: bold;', 'background-color: #fff3cd; color: #856404; font-weight: bold;', 'background-color: #f8d7da; color: #721c24; font-weight: bold;'
         
+        # Moist IN
         if m_in >= 40.0: styles[2] = RED
         elif 38.0 <= m_in <= 39.9: styles[2] = YELLOW
         elif m_in > 0 and m_in <= 37.9: styles[2] = GREEN
-        if m_fp >= 15.0: styles[5] = RED
-        elif 13.1 <= m_fp <= 14.9: styles[5] = YELLOW
-        elif 8.0 <= m_fp <= 13.0: styles[5] = GREEN
-        elif m_fp > 0 and m_fp <= 7.9: styles[5] = YELLOW
+        
+        # Moist Finish Product
+        if m_fp > 15.00: styles[5] = RED
+        elif 13.51 <= m_fp <= 15.00: styles[5] = YELLOW
+        elif 8.00 <= m_fp <= 13.50: styles[5] = GREEN
+        elif 5.00 <= m_fp <= 7.99: styles[5] = YELLOW
+        elif m_fp > 0 and m_fp < 5.00: styles[5] = RED
+        
+        # pH
         if prod:
-            spek = None
-            for k, v in KAMUS_SPEK_PH.items():
-                if k in prod: spek = v; break
-            if spek and ph > 0:
-                if spek[0] <= ph <= spek[1]: styles[6] = GREEN
+            if "Z 211 SC" in prod and ph > 0:
+                if 5.0 <= ph <= 6.5: styles[6] = GREEN
+                elif 6.51 <= ph <= 7.0: styles[6] = YELLOW
                 else: styles[6] = RED
+            else:
+                spek = None
+                for k, v in KAMUS_SPEK_PH.items():
+                    if k in prod and k != "Z 211 SC":
+                        spek = v; break
+                if spek and ph > 0:
+                    if spek[0] <= ph <= spek[1]: styles[6] = GREEN
+                    else: styles[6] = RED
+        
+        # Density
         if dens >= 0.70: styles[7] = RED
         elif 0.621 <= dens <= 0.699: styles[7] = YELLOW
         elif dens > 0 and dens <= 0.620: styles[7] = GREEN
+        
+        # Particle Size
         if ps >= 90.0: styles[8] = YELLOW
         elif 80.0 <= ps <= 89.9: styles[8] = GREEN
         elif 75.1 <= ps <= 79.9: styles[8] = YELLOW
         elif ps > 0 and ps <= 75.0: styles[8] = RED
+        
+        # Acid Content
         if acid_c > 0:
             if acid_c > 0.5: styles[9] = RED
             else: styles[9] = GREEN
+            
+        # Acidity
         if acidity > 0:
             if "211" in prod:
                 if acidity <= 2.0: styles[10] = GREEN
@@ -506,9 +505,12 @@ if sheet_id:
             elif "125" in prod:
                 if acidity <= 4.0: styles[10] = GREEN
                 else: styles[10] = RED
+                
+        # Surface Area
         if sa > 0:
             if sa >= 275: styles[11] = GREEN
             elif sa <= 26.9: styles[11] = RED
+            
         return styles
 
     if data_tersedia:
