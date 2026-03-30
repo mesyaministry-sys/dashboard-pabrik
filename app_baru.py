@@ -98,7 +98,6 @@ st.markdown("""
 # ==========================================
 with st.sidebar:
     st.title("🎛️ Control Panel")
-    
     st.divider()
     st.header("📅 Pilih Data Bulan")
 
@@ -135,13 +134,10 @@ with st.sidebar:
     jumlah_hari_bulan_ini = calendar.monthrange(tahun_sekarang, bulan_angka)[1]
     # ---------------------------------------------
 
-    # 2. Ambil ID berdasarkan bulan yang dipilih
-    current_id = DATABASE_ID.get(pilih_bulan, "")
-    
-    # 3. Tampilkan di Text Input (Bisa diedit manual jika perlu)
-    sheet_id = st.text_input("ID Google Sheet:", value=current_id)
+    # 2. Ambil ID berdasarkan bulan yang dipilih (Internal)
+    sheet_id = DATABASE_ID.get(pilih_bulan, "")
 
-    # 4. Setting Nama Tab/Sheet (Otomatis)
+    # 3. Setting Nama Tab/Sheet (Otomatis)
     sheet_name = f"LAPORAN FP BE {pilih_bulan}"
     target_month_idx = bulan_angka 
 
@@ -170,7 +166,15 @@ with st.sidebar:
 # 🖼️ HEADER
 # ==========================================
 st.markdown('<div class="header-container">', unsafe_allow_html=True)
-col_teks = st.container()
+col_logo, col_teks = st.columns([1.2, 5], gap="large")
+with col_logo:
+    try:
+        try: st.image("image_0.png", use_container_width=True)
+        except: 
+            try: st.image("image_0.jpg", use_container_width=True)
+            except: st.info("Logo")
+    except: st.error("Error Logo")
+    st.markdown("""<style>[data-testid="stImage"] img {border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);}</style>""", unsafe_allow_html=True)
 
 with col_teks:
     st.markdown('<div class="main-header">FACTORY OPERATION DASHBOARD</div>', unsafe_allow_html=True)
