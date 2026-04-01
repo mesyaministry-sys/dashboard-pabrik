@@ -213,10 +213,11 @@ def load_data(id, sheet_name_input, expected_month=None):
         if header_row == -1: return None 
         
         df_clean = df.iloc[header_row + 1:].copy()
-        if df_clean.shape[1] < 14: return None # Cek kelengkapan kolom
+        # Mengambil hingga 15 kolom agar KETERANGAN ikut terbaca
+        if df_clean.shape[1] < 15: return None 
 
-        df_clean = df_clean.iloc[:, :14] 
-        df_clean.columns = ["DATE", "FLOW", "MOIST_IN", "PRODUCT", "BATCH", "MOIST_FINISH_PRODUCT", "PH", "DENSITY", "PARTICLE_SIZE", "ACID_CONTENT", "ACIDITY", "SURFACE_AREA", "BP_2_PERCENT", "STD_BP_2_PERCENT"]
+        df_clean = df_clean.iloc[:, :15] 
+        df_clean.columns = ["DATE", "FLOW", "MOIST_IN", "PRODUCT", "BATCH", "MOIST_FINISH_PRODUCT", "PH", "DENSITY", "PARTICLE_SIZE", "ACID_CONTENT", "ACIDITY", "SURFACE_AREA", "BP_2_PERCENT", "STD_BP_2_PERCENT", "KETERANGAN"]
         
         df_clean = df_clean[~df_clean["DATE"].str.contains("Total|Average|Month", case=False, na=False)]
         df_clean = df_clean[df_clean["DATE"] != ""]
@@ -448,7 +449,8 @@ if sheet_id:
     if data_tersedia:
         df_display = df
     else:
-        cols = ["DATE", "FLOW", "MOIST_IN", "PRODUCT", "BATCH", "MOIST_FINISH_PRODUCT", "PH", "DENSITY", "PARTICLE_SIZE", "ACID_CONTENT", "ACIDITY", "SURFACE_AREA", "BP_2_PERCENT", "STD_BP_2_PERCENT"]
+        # Ditambahkan KETERANGAN pada template kolom kosong
+        cols = ["DATE", "FLOW", "MOIST_IN", "PRODUCT", "BATCH", "MOIST_FINISH_PRODUCT", "PH", "DENSITY", "PARTICLE_SIZE", "ACID_CONTENT", "ACIDITY", "SURFACE_AREA", "BP_2_PERCENT", "STD_BP_2_PERCENT", "KETERANGAN"]
         df_display = pd.DataFrame(columns=cols)
 
     def qc_logic(row):
@@ -512,8 +514,9 @@ if sheet_id:
                 
         # Surface Area
         if sa > 0:
-            if sa >= 275: styles[11] = GREEN
-            elif sa <= 26.9: styles[11] = RED
+            if sa > 279.0: styles[11] = GREEN
+            elif 275.0 <= sa <= 279.0: styles[11] = YELLOW
+            elif sa < 275.0: styles[11] = RED
             
         return styles
 
