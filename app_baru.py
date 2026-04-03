@@ -12,7 +12,11 @@ import re
 # ==========================================
 # ⚙️ KONFIGURASI HALAMAN
 # ==========================================
-st.set_page_config(page_title="Executive Dashboard - Swasa Edition", layout="wide", page_icon="✨")
+# PERUBAHAN: Memanggil file gambar logo_laporan_bulanan.png sebagai icon aplikasi browser/shortcut
+try:
+    st.set_page_config(page_title="Executive Dashboard - Swasa Edition", layout="wide", page_icon="logo_laporan_bulanan.png")
+except:
+    st.set_page_config(page_title="Executive Dashboard - Swasa Edition", layout="wide", page_icon="✨") # Cadangan jika gambar tidak terbaca
 
 # ==========================================
 # 🚫 SEMBUNYIKAN ELEMEN STREAMLIT (MENU, GITHUB, FOOTER)
@@ -449,7 +453,6 @@ if sheet_id:
     if data_tersedia:
         df_display = df
     else:
-        # Ditambahkan KETERANGAN pada template kolom kosong
         cols = ["DATE", "FLOW", "MOIST_IN", "PRODUCT", "BATCH", "MOIST_FINISH_PRODUCT", "PH", "DENSITY", "PARTICLE_SIZE", "ACID_CONTENT", "ACIDITY", "SURFACE_AREA", "BP_2_PERCENT", "STD_BP_2_PERCENT", "KETERANGAN"]
         df_display = pd.DataFrame(columns=cols)
 
