@@ -128,8 +128,8 @@ with st.sidebar:
     bulan_map = { "JANUARY": 1, "FEBRUARY": 2, "MARCH": 3, "APRIL": 4, "MAY": 5, "JUNE": 6, "JULY": 7, "AUGUST": 8, "SEPTEMBER": 9, "OCTOBER": 10, "NOVEMBER": 11, "DECEMBER": 12 }
     list_bulan = list(bulan_map.keys())
     
-    # 1. Pilih Bulan Dulu
-    pilih_bulan = st.selectbox("Pilih Bulan Laporan:", list_bulan, index=0)
+    # 1. Pilih Bulan Dulu (PERUBAHAN DI SINI: index=0 diubah menjadi index=3 agar default APRIL)
+    pilih_bulan = st.selectbox("Pilih Bulan Laporan:", list_bulan, index=3)
 
     # --- LOGIKA OTOMATIS HITUNG HARI PER BULAN ---
     tahun_sekarang = datetime.datetime.now().year
