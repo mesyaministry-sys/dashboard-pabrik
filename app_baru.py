@@ -193,24 +193,20 @@ def load_data(id, sheet_name_input, expected_month=None, expected_year=None):
         df_clean = df_clean.iloc[:, :15] 
         df_clean.columns = ["DATE", "FLOW", "MOIST_IN", "PRODUCT", "BATCH", "MOIST_FINISH_PRODUCT", "PH", "DENSITY", "PARTICLE_SIZE", "ACID_CONTENT", "ACIDITY", "SURFACE_AREA", "BP_2_PERCENT", "STD_BP_2_PERCENT", "KETERANGAN"]
         
-        # --- PERBAIKAN LOGIKA TANGGAL ---
-        # 1. Bersihkan spasi kosong dan ubah empty string menjadi None
+        # --- PERBAIKAN LOGIKA TANGGAL & FORMAT ---
         df_clean["DATE"] = df_clean["DATE"].astype(str).str.strip().replace("", None)
-        
-        # 2. Forward fill (isi otomatis tanggal kosong dengan tanggal di atasnya untuk batch beruntun)
         df_clean["DATE"] = df_clean["DATE"].ffill()
-        
-        # 3. Buang row total/average
         df_clean = df_clean[~df_clean["DATE"].astype(str).str.contains("Total|Average|Month", case=False, na=False)]
         df_clean = df_clean[df_clean["DATE"].notna()]
         
-        # 4. Standardisasi otomatis ke Tahun saat ini (2026, 2027, dsb)
         if expected_year:
             def fix_year(d_str):
                 try:
                     dt = pd.to_datetime(d_str, errors='coerce')
                     if pd.notna(dt):
-                        return dt.replace(year=expected_year).strftime('%Y-%m-%d')
+                        # Format cantik ke e.g., "28 April 2026"
+                        bulan_indo = {1:'Januari', 2:'Februari', 3:'Maret', 4:'April', 5:'Mei', 6:'Juni', 7:'Juli', 8:'Agustus', 9:'September', 10:'Oktober', 11:'November', 12:'Desember'}
+                        return f"{dt.day} {bulan_indo[dt.month]} {expected_year}"
                 except: pass
                 return d_str
             
@@ -273,7 +269,6 @@ def create_pdf(sheet_name, total_prod, achievement, messages, forecast_text):
 # 3. DASHBOARD VISUALIZATION
 # ==========================================
 if sheet_id:
-    # PERUBAHAN: Menambahkan variabel `tahun_sekarang` saat memanggil data
     df = load_data(sheet_id, sheet_name, target_month_idx, tahun_sekarang)
     
     total_prod_ton = 0; total_flow = 0; yield_prod = 0; losses = 0; achievement = 0
@@ -434,10 +429,19 @@ if sheet_id:
 
     def qc_logic(row):
         if not data_tersedia: return [''] * len(row)
-        styles = [''] * len(row)
+        
+        # --- FIX KOTAK HITAM BROWSER DARK MODE ---
+        # Menetapkan warna dasar (putih) dan teks (gelap) secara paksa untuk seluruh baris,
+        # sehingga tidak ada sel yang "kosong gayanya" yang dibaca hitam oleh mode gelap Brave.
+        BASE_STYLE = 'background-color: #ffffff; color: #212529;'
+        styles = [BASE_STYLE] * len(row)
+        
         prod = str(row['PRODUCT']).upper()
         m_in, m_fp, ph, dens, ps, acid_c, acidity, sa = row['MOIST_IN'], row['MOIST_FINISH_PRODUCT'], row['PH'], row['DENSITY'], row['PARTICLE_SIZE'], row['ACID_CONTENT'], row['ACIDITY'], row['SURFACE_AREA']
-        GREEN, YELLOW, RED = 'background-color: #d4edda; color: #155724; font-weight: bold;', 'background-color: #fff3cd; color: #856404; font-weight: bold;', 'background-color: #f8d7da; color: #721c24; font-weight: bold;'
+        
+        GREEN = 'background-color: #d4edda; color: #155724; font-weight: bold;'
+        YELLOW = 'background-color: #fff3cd; color: #856404; font-weight: bold;'
+        RED = 'background-color: #f8d7da; color: #721c24; font-weight: bold;'
         
         # Moist IN
         if m_in >= 40.0: styles[2] = RED
