@@ -160,7 +160,6 @@ st.divider()
 
 # ==========================================
 # 📘 KAMUS SPEK 
-# PERUBAHAN: Menambahkan Spek 5.0 - 7.0 untuk Z 221 S dan Z 221
 # ==========================================
 KAMUS_SPEK_PH = { 
     "Z 125": [3.0, 5.0], 
@@ -232,11 +231,11 @@ def load_data(id, sheet_name_input, expected_month=None, expected_year=None):
         return None
 
 # ==========================================
-# 🧾 FUNGSI PDF GENERATOR (DIPERBARUI)
+# 🧾 FUNGSI PDF GENERATOR (VERSI ELEGAN & RAPI)
 # ==========================================
 def create_pdf(sheet_name, df_pdf, total_prod, achievement, forecast_text):
     
-    # Fungsi PENTING: membersihkan teks/emoji yang menyebabkan error Latin-1
+    # Membersihkan teks dari emoji agar tidak error Codec Latin-1
     def safe_text(text):
         text_str = str(text)
         text_str = text_str.replace('🚀', '').replace('⚠️', '').replace('📉', '').replace('✅', '').replace('**', '')
@@ -244,58 +243,72 @@ def create_pdf(sheet_name, df_pdf, total_prod, achievement, forecast_text):
 
     class PDF(FPDF):
         def header(self):
-            # Mencoba mencetak Logo jika ada di folder
+            # Mencoba mencetak Logo jika file ada di direktori
             try:
-                self.image("logo_laporan_bulanan.png", 10, 8, 25)
+                self.image("logo_laporan_bulanan.png", 10, 8, 22)
             except:
                 pass
             
             # KOP SURAT
-            self.set_font('Arial', 'B', 16)
-            self.cell(30)
-            self.cell(0, 7, safe_text('PT. SWASA - BLEACHING EARTH DIVISION'), 0, 1, 'L')
+            self.set_font('Arial', 'B', 15)
+            self.set_text_color(20, 50, 90) # Biru Tua Elegan
+            self.cell(28)
+            self.cell(0, 6, safe_text('PT. SWASA - BLEACHING EARTH DIVISION'), 0, 1, 'L')
             
-            self.set_font('Arial', '', 9)
-            self.cell(30)
-            self.cell(0, 5, safe_text('Alamat: Kp Cibatu Jati RT.004 RW.002, Kelurahan Cibatu, Kecamatan Cikembar, Kabupaten Sukabumi, Jawa Barat'), 0, 1, 'L')
+            self.set_font('Arial', '', 8)
+            self.set_text_color(70, 70, 70) # Abu-abu
+            self.cell(28)
+            self.cell(0, 4, safe_text('Alamat: Kp Cibatu Jati RT.004 RW.002, Kelurahan Cibatu, Kecamatan Cikembar, Kabupaten Sukabumi, Jawa Barat'), 0, 1, 'L')
             
-            self.cell(30)
-            self.cell(0, 5, safe_text('Email: swsbleaching@zenith-be.com | Telp: (+62) 21 6531 0166'), 0, 1, 'L')
+            self.cell(28)
+            self.cell(0, 4, safe_text('Email: swsbleaching@zenith-be.com | Telp: (+62) 21 6531 0166'), 0, 1, 'L')
             
-            # Garis Kop
+            # Garis Kop Elegan (Double Line)
+            self.set_draw_color(0, 91, 234) # Garis Biru Tebal
             self.set_line_width(0.8)
-            self.line(10, 27, 200, 27)
+            self.line(10, 25, 200, 25)
+            
+            self.set_draw_color(0, 0, 0) # Garis Hitam Tipis
             self.set_line_width(0.2)
-            self.line(10, 28, 200, 28)
-            self.ln(10)
+            self.line(10, 26.5, 200, 26.5)
+            self.ln(8)
             
             # JUDUL LAPORAN
-            self.set_font('Arial', 'B', 12)
-            self.cell(0, 6, safe_text('LAPORAN HASIL ANALISA QUALITY CONTROL'), 0, 1, 'C')
+            self.set_font('Arial', 'B', 11)
+            self.set_text_color(0, 0, 0)
+            self.cell(0, 5, safe_text('LAPORAN HASIL ANALISA QUALITY CONTROL'), 0, 1, 'C')
             
-            self.set_font('Arial', 'B', 10)
+            self.set_font('Arial', 'B', 9)
             bulan_str = sheet_name.replace("LAPORAN FP BE ", "")
-            self.cell(0, 6, safe_text(f'PERIODE: {bulan_str}'), 0, 1, 'C')
-            self.ln(8)
+            self.cell(0, 5, safe_text(f'PERIODE: {bulan_str}'), 0, 1, 'C')
+            self.ln(5)
 
         def footer(self):
+            # Penomoran Halaman di bawah
             self.set_y(-15)
             self.set_font('Arial', 'I', 8)
-            self.cell(0, 10, safe_text(f'Page {self.page_no()}'), 0, 0, 'C')
+            self.set_text_color(128, 128, 128)
+            self.cell(0, 10, safe_text(f'Halaman {self.page_no()}'), 0, 0, 'C')
 
+    # Pembuatan Halaman PDF
     pdf = PDF()
     pdf.add_page()
     
-    # Keterangan Ringkasan Produksi di atas Tabel
-    pdf.set_font('Arial', 'B', 9)
-    pdf.cell(0, 6, safe_text(f'Total Production: {total_prod:,.1f} Ton | Target Achievement: {achievement:.1f}%'), 0, 1, 'L')
-    pdf.ln(2)
+    # Ringkasan Produksi di atas Tabel (Kotak Elegan)
+    pdf.set_font('Arial', 'B', 8)
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_fill_color(240, 248, 255) # Biru Terang (Alice Blue)
+    pdf.set_draw_color(200, 200, 200)
+    pdf.cell(0, 6, safe_text(f'   Total Production: {total_prod:,.1f} Ton   |   Target Achievement: {achievement:.1f}%'), 1, 1, 'L', fill=True)
+    pdf.ln(3)
     
-    # TABEL DATA 
+    # TABEL HEADER (Kepala Tabel)
     pdf.set_font('Arial', 'B', 7)
-    pdf.set_fill_color(220, 220, 220)
+    pdf.set_fill_color(0, 91, 234) # Biru
+    pdf.set_text_color(255, 255, 255) # Teks Putih
+    pdf.set_draw_color(180, 180, 180) # Garis Abu-abu
     
-    # Pengaturan Lebar Kolom (Total = 190)
+    # Pengaturan Lebar Kolom (Total Lebar A4 = ~190)
     cols = [
         ("NO", 8), ("TANGGAL", 25), ("PROD NAME", 25), ("BATCH(KG)", 20), 
         ("RM WATER", 20), ("WATER (%)", 20), ("PH", 15), 
@@ -303,37 +316,54 @@ def create_pdf(sheet_name, df_pdf, total_prod, achievement, forecast_text):
     ]
     
     for col_name, width in cols:
-        pdf.cell(width, 8, safe_text(col_name), 1, 0, 'C', fill=True)
+        pdf.cell(width, 7, safe_text(col_name), 1, 0, 'C', fill=True)
     pdf.ln()
     
-    # Isi Tabel Data
+    # ISI TABEL DATA (Baris Tabel dengan Zebra Striping)
     pdf.set_font('Arial', '', 7)
+    pdf.set_text_color(0, 0, 0)
+    
     if df_pdf is not None and not df_pdf.empty:
+        fill_bg = False
         for i, row in df_pdf.reset_index(drop=True).iterrows():
-            pdf.cell(cols[0][1], 6, str(i+1), 1, 0, 'C')
-            pdf.cell(cols[1][1], 6, safe_text(row['DATE']), 1, 0, 'C')
-            pdf.cell(cols[2][1], 6, safe_text(row['PRODUCT']), 1, 0, 'C')
-            pdf.cell(cols[3][1], 6, f"{row['BATCH']:,.0f}", 1, 0, 'C')
-            pdf.cell(cols[4][1], 6, f"{row['MOIST_IN']:.2f}%", 1, 0, 'C')
-            pdf.cell(cols[5][1], 6, f"{row['MOIST_FINISH_PRODUCT']:.2f}%", 1, 0, 'C')
-            pdf.cell(cols[6][1], 6, f"{row['PH']:.2f}", 1, 0, 'C')
-            pdf.cell(cols[7][1], 6, f"{row['DENSITY']:.4f}", 1, 0, 'C')
-            pdf.cell(cols[8][1], 6, f"{row['PARTICLE_SIZE']:.2f}%", 1, 0, 'C')
-            pdf.cell(cols[9][1], 6, f"{row['ACIDITY']:.3f}", 1, 0, 'C')
+            # Mewarnai selang-seling (Zebra Stripe) agar mudah dibaca
+            if fill_bg:
+                pdf.set_fill_color(245, 245, 245) # Abu-abu terang
+            else:
+                pdf.set_fill_color(255, 255, 255) # Putih
+                
+            pdf.cell(cols[0][1], 6, str(i+1), 1, 0, 'C', fill=True)
+            pdf.cell(cols[1][1], 6, safe_text(row['DATE']), 1, 0, 'C', fill=True)
+            pdf.cell(cols[2][1], 6, safe_text(row['PRODUCT']), 1, 0, 'C', fill=True)
+            pdf.cell(cols[3][1], 6, f"{row['BATCH']:,.0f}", 1, 0, 'C', fill=True)
+            pdf.cell(cols[4][1], 6, f"{row['MOIST_IN']:.2f}%", 1, 0, 'C', fill=True)
+            pdf.cell(cols[5][1], 6, f"{row['MOIST_FINISH_PRODUCT']:.2f}%", 1, 0, 'C', fill=True)
+            pdf.cell(cols[6][1], 6, f"{row['PH']:.2f}", 1, 0, 'C', fill=True)
+            pdf.cell(cols[7][1], 6, f"{row['DENSITY']:.4f}", 1, 0, 'C', fill=True)
+            pdf.cell(cols[8][1], 6, f"{row['PARTICLE_SIZE']:.2f}%", 1, 0, 'C', fill=True)
+            pdf.cell(cols[9][1], 6, f"{row['ACIDITY']:.3f}", 1, 0, 'C', fill=True)
             pdf.ln()
+            
+            fill_bg = not fill_bg # Balikkan warna untuk baris selanjutnya
     else:
-        pdf.cell(sum([c[1] for c in cols]), 10, "Tidak ada data yang tersedia.", 1, 1, 'C')
+        pdf.cell(sum([c[1] for c in cols]), 10, "Tidak ada data yang tersedia untuk bulan ini.", 1, 1, 'C')
         
-    # TANDA TANGAN
-    pdf.ln(10)
-    pdf.set_font('Arial', '', 9)
-    pdf.cell(130)
-    pdf.cell(60, 5, safe_text(f'Dicetak pada: {datetime.datetime.now().strftime("%d-%m-%Y")}'), 0, 1, 'C')
-    pdf.cell(130)
-    pdf.cell(60, 5, safe_text('Admin QC,'), 0, 1, 'C')
-    pdf.ln(15)
-    pdf.cell(130)
-    pdf.cell(60, 5, '(______________________)', 0, 1, 'C')
+    # TANDA TANGAN POSISI KANAN BAWAH
+    pdf.ln(8)
+    pdf.set_font('Arial', '', 8)
+    pdf.set_text_color(0, 0, 0)
+    
+    # Geser sumbu X ke 130 (sebelah kanan halaman)
+    pdf.set_x(130)
+    pdf.cell(60, 4, safe_text(f'Dicetak pada: {datetime.datetime.now().strftime("%d-%m-%Y")}'), 0, 1, 'C')
+    pdf.set_x(130)
+    pdf.cell(60, 4, safe_text('Admin QC,'), 0, 1, 'C')
+    
+    # Beri jarak kosong untuk area tanda tangan
+    pdf.ln(12) 
+    
+    pdf.set_x(130)
+    pdf.cell(60, 4, '(______________________)', 0, 1, 'C')
 
     return pdf.output(dest='S').encode('latin-1')
 
@@ -448,7 +478,7 @@ if sheet_id:
                 st.warning("Data belum cukup untuk forecasting.")
                 forecast_msg = "Data insufficient for forecasting."
 
-        # PERUBAHAN PDF TERJADI DI SINI - MENGIRIM VARIABEL `df`
+        # PEMANGGILAN FUNGSI PDF
         with st.sidebar:
             st.divider()
             st.markdown("### 📄 Export Report")
@@ -525,7 +555,7 @@ if sheet_id:
         elif 5.00 <= m_fp <= 7.99: styles[5] = YELLOW
         elif m_fp > 0 and m_fp < 5.00: styles[5] = RED
         
-        # pH (Otomatis Mengacu Pada KAMUS_SPEK_PH Yang Baru)
+        # pH
         if prod:
             if "Z 211 SC" in prod and ph > 0:
                 if 5.0 <= ph <= 6.5: styles[6] = GREEN
