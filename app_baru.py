@@ -12,15 +12,13 @@ import re
 # ==========================================
 # ⚙️ KONFIGURASI HALAMAN
 # ==========================================
-# PERUBAHAN: Memanggil file gambar logo_laporan_bulanan.png sebagai icon aplikasi browser/shortcut
 try:
     st.set_page_config(page_title="Executive Dashboard - Swasa Edition", layout="wide", page_icon="logo_laporan_bulanan.png")
 except:
-    st.set_page_config(page_title="Executive Dashboard - Swasa Edition", layout="wide", page_icon="✨") # Cadangan jika gambar tidak terbaca
+    st.set_page_config(page_title="Executive Dashboard - Swasa Edition", layout="wide", page_icon="✨")
 
 # ==========================================
-# 🚫 SEMBUNYIKAN ELEMEN STREAMLIT (MENU, GITHUB, FOOTER)
-# Dipindah ke paling atas agar berlaku di halaman Login juga!
+# 🚫 SEMBUNYIKAN ELEMEN STREAMLIT 
 # ==========================================
 hide_streamlit_style = """
             <style>
@@ -70,78 +68,52 @@ if not check_login():
 # ==========================================
 # 🚀 MULAI KONTEN DASHBOARD
 # ==========================================
-
-# CSS khusus untuk tampilan Dashboard (tidak termasuk perintah hide Streamlit lagi)
 st.markdown("""
 <style>
-    /* HEADER STYLING */
     .header-container { padding-top: 10px; padding-bottom: 20px; }
     .main-header { font-size: 42px; font-weight: 900; background: linear-gradient(90deg, #005bea 0%, #00c6fb 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: left; margin-bottom: 5px; line-height: 1.1; filter: drop-shadow(0px 0px 3px rgba(0, 198, 251, 0.3)); }
     .sub-header { font-size: 18px; color: #546e7a; text-align: left; margin-bottom: 15px; font-weight: 500; }
     .dev-credit { font-size: 15px; color: #b0bec5; font-weight: 500; font-style: italic; text-align: left; margin-top: 10px; letter-spacing: 0.5px; }
-    
-    /* KPI CARD */
     .kpi-card { background: white; border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-left: 5px solid #3498db; margin-bottom: 10px; transition: transform 0.3s, box-shadow 0.3s; }
     .kpi-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
     .kpi-title { font-size: 13px; color: #95a5a6; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
     .kpi-value { font-size: 26px; font-weight: 800; color: #2c3e50; margin-top: 8px; }
     .kpi-unit { font-size: 12px; color: #bdc3c7; font-weight: 500;}
-    
     .border-prod { border-left-color: #005bea !important; }
     .border-qual { border-left-color: #00c6fb !important; }
     .border-chem { border-left-color: #ff9a44 !important; }
     .border-phys { border-left-color: #a18cd1 !important; }
-    
     .empty-state { text-align: center; padding: 40px; background-color: #f8f9fa; border: 2px dashed #d1d8e0; border-radius: 15px; color: #7f8c8d; }
     .forecast-box { padding: 20px; border-radius: 15px; color: white; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
 </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 1. SIDEBAR (MODIFIED FOR MULTI-MONTH ID)
+# 1. SIDEBAR 
 # ==========================================
 with st.sidebar:
     st.title("🎛️ Control Panel")
     st.divider()
     st.header("📅 Pilih Data Bulan")
 
-    # -------------------------------------------------------------
-    # 👇 TEMPAT MASUKKAN ID GOOGLE SHEET PER BULAN DI SINI 👇
-    # -------------------------------------------------------------
     DATABASE_ID = {
         "JANUARY": "1yccpRefabM87-Ltzg0lbMHcsR2Qs6ZxPGd5A15jAHZ4", 
         "FEBRUARY": "1MHNmJpBXMHdgHdP85Wogm4olK1dgiIFTySpEzTrqzEg", 
         "MARCH": "1MXJPZFhB423ZpfdE6hJ6C9SlfqAF1zFmtqx6mLmT3sg",    
         "APRIL": "1JbBqhS0GIdctKL0g9Dvx4n6S3P6O3uQyXpkgjqaFK_k",    
-        "MAY": "",
-        "JUNE": "",
-        "JULY": "",
-        "AUGUST": "",
-        "SEPTEMBER": "",
-        "OCTOBER": "",
-        "NOVEMBER": "",
-        "DECEMBER": ""
+        "MAY": "", "JUNE": "", "JULY": "", "AUGUST": "", "SEPTEMBER": "", "OCTOBER": "", "NOVEMBER": "", "DECEMBER": ""
     }
-    # -------------------------------------------------------------
 
-    # Mapping nama bulan ke angka (untuk logika forecast)
     bulan_map = { "JANUARY": 1, "FEBRUARY": 2, "MARCH": 3, "APRIL": 4, "MAY": 5, "JUNE": 6, "JULY": 7, "AUGUST": 8, "SEPTEMBER": 9, "OCTOBER": 10, "NOVEMBER": 11, "DECEMBER": 12 }
     list_bulan = list(bulan_map.keys())
     
-    # 1. Pilih Bulan Dulu (PERUBAHAN DI SINI: index=0 diubah menjadi index=3 agar default APRIL)
     pilih_bulan = st.selectbox("Pilih Bulan Laporan:", list_bulan, index=3)
 
-    # --- LOGIKA OTOMATIS HITUNG HARI PER BULAN ---
     tahun_sekarang = datetime.datetime.now().year
     bulan_angka = bulan_map[pilih_bulan]
-    # calendar.monthrange mengembalikan tuple (hari_pertama, jumlah_hari)
     jumlah_hari_bulan_ini = calendar.monthrange(tahun_sekarang, bulan_angka)[1]
-    # ---------------------------------------------
 
-    # 2. Ambil ID berdasarkan bulan yang dipilih (Internal)
     sheet_id = DATABASE_ID.get(pilih_bulan, "")
-
-    # 3. Setting Nama Tab/Sheet (Otomatis)
     sheet_name = f"LAPORAN FP BE {pilih_bulan}"
     target_month_idx = bulan_angka 
 
@@ -151,7 +123,6 @@ with st.sidebar:
     st.header("🎯 Target Setting")
     target_daily = st.number_input("Target Harian (Ton/Hari):", value=45.0, step=1.0)
     
-    # --- UPDATE: Target bulanan otomatis dikalikan jumlah hari akurat ---
     target_monthly = target_daily * jumlah_hari_bulan_ini
     st.caption(f"Target Bulanan ({jumlah_hari_bulan_ini} Hari): **{target_monthly:,.0f} Ton**")
     
@@ -196,8 +167,8 @@ KAMUS_SPEK_PH = { "Z 125": [3.0, 5.0], "Z 211": [3.5, 5.5], "Z 211 SC": [5.0, 6.
 # 2. MESIN PEMBACA DATA
 # ==========================================
 @st.cache_data
-def load_data(id, sheet_name_input, expected_month=None):
-    if not id: return None # Cegah error jika ID kosong
+def load_data(id, sheet_name_input, expected_month=None, expected_year=None):
+    if not id: return None
 
     if sheet_name_input:
         nama_sheet_aman = urllib.parse.quote(sheet_name_input)
@@ -208,7 +179,7 @@ def load_data(id, sheet_name_input, expected_month=None):
     try:
         df = pd.read_csv(url, header=None, dtype=str, keep_default_na=False)
         header_row = -1
-        for i in range(min(20, len(df))): # Scan 20 baris pertama saja biar cepat
+        for i in range(min(20, len(df))):
             row_str = " ".join(df.iloc[i].astype(str).tolist()).upper()
             if "DATE" in row_str and "FLOW" in row_str:
                 header_row = i
@@ -217,26 +188,33 @@ def load_data(id, sheet_name_input, expected_month=None):
         if header_row == -1: return None 
         
         df_clean = df.iloc[header_row + 1:].copy()
-        # Mengambil hingga 15 kolom agar KETERANGAN ikut terbaca
         if df_clean.shape[1] < 15: return None 
 
         df_clean = df_clean.iloc[:, :15] 
         df_clean.columns = ["DATE", "FLOW", "MOIST_IN", "PRODUCT", "BATCH", "MOIST_FINISH_PRODUCT", "PH", "DENSITY", "PARTICLE_SIZE", "ACID_CONTENT", "ACIDITY", "SURFACE_AREA", "BP_2_PERCENT", "STD_BP_2_PERCENT", "KETERANGAN"]
         
-        df_clean = df_clean[~df_clean["DATE"].str.contains("Total|Average|Month", case=False, na=False)]
-        df_clean = df_clean[df_clean["DATE"] != ""]
+        # --- PERBAIKAN LOGIKA TANGGAL ---
+        # 1. Bersihkan spasi kosong dan ubah empty string menjadi None
+        df_clean["DATE"] = df_clean["DATE"].astype(str).str.strip().replace("", None)
         
-        if expected_month is not None and not df_clean.empty:
-            try:
-                sample_date_str = str(df_clean['DATE'].iloc[0])
-                dt_sample = None
-                try: dt_sample = pd.to_datetime(sample_date_str, format='%d-%b', errors='raise')
-                except: dt_sample = pd.to_datetime(sample_date_str, errors='coerce')
-                
-                if pd.notnull(dt_sample):
-                    # Logika check bulan (optional, di-bypass agar fleksibel)
-                    pass 
-            except: pass
+        # 2. Forward fill (isi otomatis tanggal kosong dengan tanggal di atasnya untuk batch beruntun)
+        df_clean["DATE"] = df_clean["DATE"].ffill()
+        
+        # 3. Buang row total/average
+        df_clean = df_clean[~df_clean["DATE"].astype(str).str.contains("Total|Average|Month", case=False, na=False)]
+        df_clean = df_clean[df_clean["DATE"].notna()]
+        
+        # 4. Standardisasi otomatis ke Tahun saat ini (2026, 2027, dsb)
+        if expected_year:
+            def fix_year(d_str):
+                try:
+                    dt = pd.to_datetime(d_str, errors='coerce')
+                    if pd.notna(dt):
+                        return dt.replace(year=expected_year).strftime('%Y-%m-%d')
+                except: pass
+                return d_str
+            
+            df_clean["DATE"] = df_clean["DATE"].apply(fix_year)
 
         numeric_cols = ["FLOW", "MOIST_IN", "BATCH", "MOIST_FINISH_PRODUCT", "PH", "DENSITY", "PARTICLE_SIZE", "ACID_CONTENT", "ACIDITY", "SURFACE_AREA"]
         def clean_num(x):
@@ -295,7 +273,8 @@ def create_pdf(sheet_name, total_prod, achievement, messages, forecast_text):
 # 3. DASHBOARD VISUALIZATION
 # ==========================================
 if sheet_id:
-    df = load_data(sheet_id, sheet_name, target_month_idx)
+    # PERUBAHAN: Menambahkan variabel `tahun_sekarang` saat memanggil data
+    df = load_data(sheet_id, sheet_name, target_month_idx, tahun_sekarang)
     
     total_prod_ton = 0; total_flow = 0; yield_prod = 0; losses = 0; achievement = 0
     avg_density = 0; avg_part_size = 0; avg_surface = 0; avg_min = 0; avg_fp = 0
@@ -341,7 +320,6 @@ if sheet_id:
     
     st.divider()
 
-    # --- LOGIKA TAMPILAN GRAFIK & TABEL ---
     if data_tersedia:
         c_a, c_b = st.columns(2)
         with c_a:
@@ -380,7 +358,6 @@ if sheet_id:
                 days_run = len(df['DATE'].unique())
                 avg_daily_prod = total_prod_ton / days_run if days_run > 0 else 0
                 
-                # --- UPDATE: Ambil jumlah hari bulan dari variabel yang sudah dihitung ---
                 total_days_in_month = jumlah_hari_bulan_ini 
                 
                 remaining_days = total_days_in_month - days_run
@@ -433,7 +410,6 @@ if sheet_id:
             fig_target.add_trace(go.Bar(x=[total_prod_ton], y=['Achievement'], orientation='h', name='Actual', marker_color='#005bea', text=[f"{total_prod_ton:,.0f} T"], textposition='auto'))
             fig_target.add_trace(go.Bar(x=[target_monthly], y=['Achievement'], orientation='h', name='Monthly Target', marker_color='#ecf0f1', marker_line_color='#95a5a6', marker_line_width=2, opacity=0.6, text=[f"Target: {target_monthly:,.0f} T"], textposition='outside'))
             
-            # --- UPDATE: Teks pada judul grafik otomatis berubah mengikuti variabel ---
             fig_target.update_layout(title=f"Target: {target_daily} T/Day × {jumlah_hari_bulan_ini} Days = {target_monthly:,.0f} Ton", barmode='overlay', xaxis_title="Tonase", height=300, margin=dict(t=50, b=10))
             st.plotly_chart(fig_target, use_container_width=True)
 
