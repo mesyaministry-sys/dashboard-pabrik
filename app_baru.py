@@ -103,7 +103,7 @@ with st.sidebar:
         "APRIL": "1JbBqhS0GIdctKL0g9Dvx4n6S3P6O3uQyXpkgjqaFK_k",    
         "MAY": "18clTxPDDLXZNvk1MndzpqPADtDgSfdFM1YnwpVOpU7Y", 
         "JUNE": "1iO1l1xSmVV17HKT9xnmC_71zmjblLqnM9_8SmXp8M2s",
-        "JULY": "", 
+        "JULY": "1-92KA_tFnsOt_MBrZf0xEXmqtWW0fVB-9MPooppR1EA", 
         "AUGUST": "", "SEPTEMBER": "", "OCTOBER": "", "NOVEMBER": "", "DECEMBER": ""
     }
 
