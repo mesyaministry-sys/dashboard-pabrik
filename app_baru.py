@@ -104,7 +104,8 @@ with st.sidebar:
         "MAY": "18clTxPDDLXZNvk1MndzpqPADtDgSfdFM1YnwpVOpU7Y", 
         "JUNE": "1iO1l1xSmVV17HKT9xnmC_71zmjblLqnM9_8SmXp8M2s",
         "JULY": "1-92KA_tFnsOt_MBrZf0xEXmqtWW0fVB-9MPooppR1EA", 
-        "AUGUST": "", "SEPTEMBER": "", "OCTOBER": "", "NOVEMBER": "", "DECEMBER": ""
+        "AUGUST": "1Rfjz1JeZG47OtcDr-lQYZqGuzvn2l4OgwqgmS4TG0kA",
+        "SEPTEMBER": "", "OCTOBER": "", "NOVEMBER": "", "DECEMBER": ""
     }
 
     bulan_map = { "JANUARY": 1, "FEBRUARY": 2, "MARCH": 3, "APRIL": 4, "MAY": 5, "JUNE": 6, "JULY": 7, "AUGUST": 8, "SEPTEMBER": 9, "OCTOBER": 10, "NOVEMBER": 11, "DECEMBER": 12 }
